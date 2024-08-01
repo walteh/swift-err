@@ -1,12 +1,4 @@
-import ErrMacro
-
-let a = 17
-let b = 25
-
-let (result, code) = #stringify(a + b)
-
-print("The value \(result) was produced by the code \"\(code)\"")
-
+import Err
 import Foundation
 
 func myThrowingFunc(_ arg: Int) throws -> UInt32 {
@@ -21,7 +13,7 @@ func checker() -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard let res3 = try Result({ try myThrowingFunc(12) }).get() else {
+	guard let res3 = try Result(catching: { try myThrowingFunc(12) }).get() else {
 		return .failure(err)
 	}
 

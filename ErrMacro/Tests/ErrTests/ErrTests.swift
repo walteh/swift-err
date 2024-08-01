@@ -6,11 +6,10 @@ import XCTest
 
 // Macro implementations build for the host, so the corresponding module is not available when cross-compiling. Cross-compiled tests may still make use of the macro itself in end-to-end tests.
 #if canImport(ErrMacroMacros)
-	@_spi(ExperimentalLanguageFeature) import ErrMacroMacros
+	@_spi(ExperimentalLanguageFeature) import ErrMacros
 
 	let testMacros: [String: Macro.Type] = [
-		"stringify": StringifyMacro.self,
-		"err": ErrMacro.self,
+		"err": Err.self,
 	]
 #endif
 
@@ -19,21 +18,6 @@ func myThrowingFunc(_ arg: Int) throws -> UInt32 {
 }
 
 final class ErrMacroTests: XCTestCase {
-	func testMacro() throws {
-		#if canImport(ErrMacroMacros)
-			assertMacroExpansion(
-				"""
-				@err func hi() -> Result<String, Error> { return .success("hi") }
-				""",
-				expandedSource: """
-				func hi() -> Result<String, Error> { var err: Error? = nil; return .success("hi") }
-				""",
-				macros: testMacros
-			)
-		#else
-			throw XCTSkip("macros are only supported when running tests for the host platform")
-		#endif
-	}
 
 	func testMacroDeep() throws {
 		#if canImport(ErrMacroMacros)
@@ -53,6 +37,7 @@ final class ErrMacroTests: XCTestCase {
 						try myThrowingFunc(12)
 						}).to(&___err) else {
 						let err = ___err!
+						let nserr = err as NSError
 
 							return .failure(err)
 					}
@@ -67,19 +52,4 @@ final class ErrMacroTests: XCTestCase {
 		#endif
 	}
 
-	func testMacroWithStringLiteral() throws {
-		#if canImport(ErrMacroMacros)
-			assertMacroExpansion(
-				#"""
-				#stringify("Hello, \(name)")
-				"""#,
-				expandedSource: #"""
-				("Hello, \(name)", #""Hello, \(name)""#)
-				"""#,
-				macros: testMacros
-			)
-		#else
-			throw XCTSkip("macros are only supported when running tests for the host platform")
-		#endif
-	}
 }

@@ -5,17 +5,17 @@ import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
-	name: "ErrMacro",
+	name: "Err",
 	platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
 	products: [
 		// Products define the executables and libraries a package produces, making them visible to other packages.
 		.library(
-			name: "ErrMacro",
-			targets: ["ErrMacro"]
+			name: "Err",
+			targets: ["Err"]
 		),
 		.executable(
-			name: "ErrMacroClient",
-			targets: ["ErrMacroClient"]
+			name: "ErrClient",
+			targets: ["ErrClient"]
 		),
 	],
 	dependencies: [
@@ -26,7 +26,7 @@ let package = Package(
 		// Targets can depend on other targets in this package and products from dependencies.
 		// Macro implementation that performs the source transformation of a macro.
 		.macro(
-			name: "ErrMacroMacros",
+			name: "ErrMacros",
 			dependencies: [
 				.product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
 				.product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
@@ -34,19 +34,19 @@ let package = Package(
 		),
 
 		// Library that exposes a macro as part of its API, which is used in client programs.
-		.target(name: "ErrMacro", dependencies: ["ErrMacroMacros"]),
+		.target(name: "Err", dependencies: ["ErrMacros"]),
 
 		// A client of the library, which is able to use the macro in its own code.
-		.executableTarget(name: "ErrMacroClient", dependencies: ["ErrMacro"],
+		.executableTarget(name: "ErrClient", dependencies: ["Err"],
 		                  swiftSettings: [
 		                  	.enableExperimentalFeature("PrembleMacros"),
 		                  ]),
 
 		// A test target used to develop the macro implementation.
 		.testTarget(
-			name: "ErrMacroTests",
+			name: "ErrTests",
 			dependencies: [
-				"ErrMacroMacros",
+				"ErrMacros",
 				.product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
 			]
 		),

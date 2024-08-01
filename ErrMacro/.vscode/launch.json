@@ -23,6 +23,30 @@
             "name": "Release ErrMacroClient",
             "program": "${workspaceFolder:ErrMacro}/.build/release/ErrMacroClient",
             "preLaunchTask": "swift: Build Release ErrMacroClient"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:ErrMacro}",
+            "name": "Debug ErrClient",
+            "program": "${workspaceFolder:ErrMacro}/.build/debug/ErrClient",
+            "preLaunchTask": "swift: Build Debug ErrClient"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:ErrMacro}",
+            "name": "Release ErrClient",
+            "program": "${workspaceFolder:ErrMacro}/.build/release/ErrClient",
+            "preLaunchTask": "swift: Build Release ErrClient"
         }
     ]
 }

@@ -7,8 +7,6 @@ let (result, code) = #stringify(a + b)
 
 print("The value \(result) was produced by the code \"\(code)\"")
 
-
-
 import Foundation
 
 func myThrowingFunc(_ arg: Int) throws -> UInt32 {
@@ -31,36 +29,19 @@ public extension Result {
 	}
 }
 
+struct Hello: Error {}
 
-
-struct  Hello: Error {}
-		
-func checker() -> Result<String, Error> {
-	var err: Error? = nil
-	guard let res = #errreturn({ try myThrowingFunc(12) }) else {
-		switch err! {
-		case is Hello:
-			return .failure(err!)
-		default:
-			return .failure(err!)
-		}
+@err func checker() -> Result<String, Error> {
+	guard let res2 = Result(catching: {
+		try myThrowingFunc(12)
+	}).to(&err) else {
+		return .failure(err!)
 	}
+
 	
-	//			else { return .failure(err!) }
-	//
-	//
-	
-//	let res2 = Result(catching: {
-//		try myThrowingFunc(12)
-//	}).to(&err)  ?? { return .failure(err!) }
-			
-			
 //			print(res)
-			
-			return .success("ok")
 
-		}
-		
-
+	return .success("ok")
+}
 
 checker()

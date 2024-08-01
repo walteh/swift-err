@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-err}/ErrMacro",
+            "name": "Debug ErrMacroClient (ErrMacro)",
+            "program": "${workspaceFolder:swift-err}/ErrMacro/.build/debug/ErrMacroClient",
+            "preLaunchTask": "swift: Build Debug ErrMacroClient (ErrMacro)"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:swift-err}/ErrMacro",
+            "name": "Release ErrMacroClient (ErrMacro)",
+            "program": "${workspaceFolder:swift-err}/ErrMacro/.build/release/ErrMacroClient",
+            "preLaunchTask": "swift: Build Release ErrMacroClient (ErrMacro)"
+        }
+    ]
+}

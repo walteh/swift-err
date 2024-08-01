@@ -13,35 +13,17 @@ func myThrowingFunc(_ arg: Int) throws -> UInt32 {
 	return UInt32(arg)
 }
 
-public extension Result {
-	func to(_ err: inout Error?) -> (Success?) {
-		return self.err(&err)
-	}
-
-	func err(_ err: inout Error?) -> (Success?) {
-		switch self {
-		case let .success(value):
-			return value
-		case let .failure(error):
-			err = error
-			return nil
-		}
-	}
-}
-
 struct Hello: Error {}
 
-@err func checker() -> Result<String, Error> {
-	guard let res2 = Result(catching: {
-		try myThrowingFunc(12)
-	}).to(&err) else {
-		return .failure(err!)
+@err
+func checker() -> Result<String, Error> {
+	guard let res2 = try myThrowingFunc(12) else {
+		return .failure(err)
 	}
 
-	
-//			print(res)
+	guard let res3 = try Result({ try myThrowingFunc(12) }).get() else {
+		return .failure(err)
+	}
 
 	return .success("ok")
 }
-
-checker()

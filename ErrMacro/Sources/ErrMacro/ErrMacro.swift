@@ -16,3 +16,15 @@ public macro err(
 //	 _ comment: @autoclosure () -> String? = nil,
 //	_ expression: () throws -> R
 ) = #externalMacro(module: "ErrMacroMacros", type: "ErrMacro")
+
+public extension Result {
+	func to(_ err: inout Error?) -> (Success?) {
+		switch self {
+		case let .success(value):
+			return value
+		case let .failure(error):
+			err = error
+			return nil
+		}
+	}
+}

@@ -37,12 +37,11 @@ final class ErrTests: XCTestCase {
 				func hi() -> Result<String, Error> {
 					var ___err: Error? = nil
 					guard let res = Result.create(catching: {
-						try myThrowingFunc(12)
+							try myThrowingFunc(12)
 						}).to(&___err) else {
 						let err = ___err!
-						let nserr = err as NSError
 
-							return .failure(err)
+						return .failure(err)
 					}
 					return .success(res)
 				}
@@ -59,7 +58,7 @@ final class ErrTests: XCTestCase {
 		#if canImport(ErrMacros)
 			assertMacroExpansion(
 				"""
-				@err func hi() -> Result<String, Error> { 
+				@err func hi() -> Result<String, Error> {
 					guard let res = myResultFunc(12).err() else {
 						return .failure(err)
 					}
@@ -71,9 +70,40 @@ final class ErrTests: XCTestCase {
 					var ___err: Error? = nil
 					guard let res = myResultFunc(12).to(&___err) else {
 						let err = ___err!
-						let nserr = err as NSError
 
-							return .failure(err)
+						return .failure(err)
+					}
+					return .success(res)
+				}
+				""",
+				macros: testMacros,
+				indentationWidth: .tab
+			)
+		#else
+			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
+
+	func testMacroDeepWithResultAndLargeBody() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err func hi() -> Result<String, Error> {
+					guard let res = myResultFunc(12).err() else {
+						print(err)
+						return .failure(err)
+					}
+					return .success(res)
+				}
+				""",
+				expandedSource: """
+				func hi() -> Result<String, Error> {
+					var ___err: Error? = nil
+					guard let res = myResultFunc(12).to(&___err) else {
+						let err = ___err!
+
+						print(err)
+						return .failure(err)
 					}
 					return .success(res)
 				}

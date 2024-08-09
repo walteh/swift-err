@@ -6,6 +6,39 @@ import SwiftSyntaxBuilder
 @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
 import SwiftSyntax
 
+private func generateGuardStatement(
+	condition: OptionalBindingConditionSyntax,
+	functionCall: String,
+	guardStmt: GuardStmtSyntax
+) -> String {
+	let statements: String = "\(guardStmt.body)"
+	let includeNSErr = statements.contains("nserr")
+	let includeErr = statements.contains("err") || includeNSErr
+
+	// Extract leading trivia as a string
+	let guardLeadingTrivia = String(bytes: guardStmt.syntaxTextBytes.prefix(guardStmt.leadingTriviaLength.utf8Length), encoding: .utf8)!
+	var bodyLeadingTrivia = String(bytes: guardStmt.body.statements.syntaxTextBytes.prefix(guardStmt.body.statements.leadingTriviaLength.utf8Length), encoding: .utf8)!
+
+	if bodyLeadingTrivia.hasPrefix(guardLeadingTrivia) {
+		bodyLeadingTrivia.trimPrefix(guardLeadingTrivia)
+	}
+
+	// Build the adjusted statements with correct trivia
+	var states: [String] = []
+	for stmt in guardStmt.body.statements {
+		let stmtString = "\(stmt)".trimmingCharacters(in: .whitespacesAndNewlines)
+		states.append("\n\(bodyLeadingTrivia)\(stmtString)")
+	}
+
+	let statementsd = "guard let \(condition.pattern)=\(functionCall) else {\n"
+		+ "\(includeErr ? "\(bodyLeadingTrivia)let err = ___err!\n" : "")"
+		+ "\(includeNSErr ? "\(bodyLeadingTrivia)let nserr = err as NSError\n" : "")"
+		+ "\(states.joined(separator: ""))"
+		+ "}"
+
+	return statementsd
+}
+
 func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) -> CodeBlockItemListSyntax {
 	var newItems = [CodeBlockItemSyntax]()
 
@@ -18,15 +51,11 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
 				let functionCall = tryExpr.expression
 
-				let expandedText = """
-				guard let \(condition.pattern)= Result.create(catching: {
-					try \(functionCall)
-				}).to(&___err) else {
-					let err = ___err!
-					let nserr = err as NSError
-					\(guardStmt.body.statements)
-				}
-				"""
+				let expandedText = generateGuardStatement(
+					condition: condition,
+					functionCall: "Result.create(catching: {\ntry \(functionCall)\n}).to(&___err)",
+					guardStmt: guardStmt
+				)
 
 				let expandedItem = Parser.parse(source: expandedText).statements
 
@@ -36,22 +65,16 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 			} else if let functionCall = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
 				let fc = "\(functionCall)".trimmingCharacters(in: .whitespacesAndNewlines)
 				if fc.hasSuffix(".err()") {
-					let expandedText = """
-						guard let \(condition.pattern)= \(fc.dropLast(6)).to(&___err) else {
-						let err = ___err!
-						let nserr = err as NSError
-						\(guardStmt.body.statements)
-					}
-					"""
-
+					let expandedText = generateGuardStatement(
+						condition: condition,
+						functionCall: "\(fc.dropLast(6)).to(&___err)",
+						guardStmt: guardStmt
+					)
 					let expandedItem = Parser.parse(source: expandedText).statements
-
 					newItems.append(contentsOf: expandedItem)
 					continue
 				}
 			}
-
-			print(guardStmt.conditions)
 		}
 		newItems.append(item)
 	}

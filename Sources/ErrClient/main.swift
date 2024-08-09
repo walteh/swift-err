@@ -29,5 +29,9 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
+	guard let res6 = await Result(catching: { try await myThrowingFunc(12) }).err() else {
+		return .failure(err)
+	}
+
 	return .success("ok")
 }

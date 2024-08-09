@@ -64,10 +64,28 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 				continue
 			} else if let functionCall = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
 				let fc = "\(functionCall)".trimmingCharacters(in: .whitespacesAndNewlines)
+
+				// let useAwait = functionCall.calledExpression.as(AwaitExprSyntax.self) != nil
+
 				if fc.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
 						functionCall: "\(fc.dropLast(6)).___to(&___err)",
+						guardStmt: guardStmt
+					)
+					let expandedItem = Parser.parse(source: expandedText).statements
+					newItems.append(contentsOf: expandedItem)
+					continue
+				}
+			} else if let functionCall = condition.initializer?.value.as(AwaitExprSyntax.self) {
+				let fc = "\(functionCall.expression)".trimmingCharacters(in: .whitespacesAndNewlines)
+
+				// let useAwait = functionCall.calledExpression.as(AwaitExprSyntax.self) != nil
+
+				if fc.hasSuffix(".err()") {
+					let expandedText = generateGuardStatement(
+						condition: condition,
+						functionCall: "await \(fc.dropLast(6)).___to(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements

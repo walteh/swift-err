@@ -49,11 +49,11 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 		   let condition = guardStmt.conditions.first?.condition.as(OptionalBindingConditionSyntax.self)
 		{
 			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
-				let functionCall = tryExpr.expression
+				let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
 
 				let expandedText = generateGuardStatement(
 					condition: condition,
-					functionCall: "Result.create(catching: {\ntry \(functionCall)\n}).to(&___err)",
+					functionCall: "\(useAwait ? "await " : "")Result.create(catching: {\ntry \(tryExpr.expression)\n}).___to(&___err)",
 					guardStmt: guardStmt
 				)
 
@@ -67,7 +67,7 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 				if fc.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
-						functionCall: "\(fc.dropLast(6)).to(&___err)",
+						functionCall: "\(fc.dropLast(6)).___to(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements

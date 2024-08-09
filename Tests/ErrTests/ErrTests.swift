@@ -38,7 +38,7 @@ final class ErrTests: XCTestCase {
 					var ___err: Error? = nil
 					guard let res = Result.create(catching: {
 							try myThrowingFunc(12)
-						}).to(&___err) else {
+						}).___to(&___err) else {
 						let err = ___err!
 
 						return .failure(err)
@@ -68,7 +68,7 @@ final class ErrTests: XCTestCase {
 				expandedSource: """
 				func hi() -> Result<String, Error> {
 					var ___err: Error? = nil
-					guard let res = myResultFunc(12).to(&___err) else {
+					guard let res = myResultFunc(12).___to(&___err) else {
 						let err = ___err!
 
 						return .failure(err)
@@ -99,7 +99,7 @@ final class ErrTests: XCTestCase {
 				expandedSource: """
 				func hi() -> Result<String, Error> {
 					var ___err: Error? = nil
-					guard let res = myResultFunc(12).to(&___err) else {
+					guard let res = myResultFunc(12).___to(&___err) else {
 						let err = ___err!
 
 						print(err)

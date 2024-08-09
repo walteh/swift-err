@@ -20,12 +20,12 @@ func checker() async -> Result<String, Error> {
 	guard let res3 = Result(catching: { try myThrowingFunc(12) }).err() else {
 		return .failure(err)
 	}
-	
+
 	guard let res4 = try myThrowingFunc(12) else {
 		return .failure(err)
 	}
-	
-	guard let res5 = try await  myThrowingAsyncFunc(12) else {
+
+	guard let res5 = try await myThrowingAsyncFunc(12) else {
 		return .failure(err)
 	}
 

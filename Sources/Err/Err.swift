@@ -13,7 +13,7 @@ struct TraceableError: Error {
 }
 
 public extension Result {
-	func to(_ err: inout Error?) -> (Success?) {
+	func ___to(_ err: inout Error?) -> (Success?) {
 		switch self {
 		case let .success(value):
 			return value

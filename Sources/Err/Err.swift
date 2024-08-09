@@ -45,7 +45,7 @@ public extension Result where Failure == Error {
 		}
 	}
 
-	static func create(catching body: borrowing @escaping () async throws -> Success, __file: String = #fileID, __function: String = #function, __line: UInt = #line) async -> Result<Success, Failure> {
+	static func createNonSendable(catching body: borrowing @escaping () async throws -> Success, __file: String = #fileID, __function: String = #function, __line: UInt = #line) async -> Result<Success, Failure> {
 		do {
 			let result = try await body()
 			return .success(result)

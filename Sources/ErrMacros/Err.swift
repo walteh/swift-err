@@ -6,24 +6,6 @@ import SwiftSyntaxBuilder
 @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
 import SwiftSyntax
 
-// func getTypeOfExpression(expression: ExprSyntax, in file: String) -> String? {
-//	let offset = expression.positionAfterSkippingLeadingTrivia.utf8Offset
-//
-//
-//
-//	let request: SourceKitObject = [
-//		"key.request": "source.request.cursorinfo",
-//		"key.sourcefile": file,
-//		"key.offset": offset,
-//	]
-//
-//	if let response = try? Request.customRequest(request: request).send(),
-//	   let typeName = response["key.typename"] as? String {
-//		return typeName
-//	}
-//	return nil
-// }
-
 func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) -> CodeBlockItemListSyntax {
 	var newItems = [CodeBlockItemSyntax]()
 
@@ -37,7 +19,7 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 				let functionCall = tryExpr.expression
 
 				let expandedText = """
-				guard let \(condition.pattern)= Result(catching: {
+				guard let \(condition.pattern)= Result.create(catching: {
 					try \(functionCall)
 				}).to(&___err) else {
 					let err = ___err!

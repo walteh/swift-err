@@ -4,36 +4,72 @@ import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxBuilder
 @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
-import SwiftSyntaxMacros
+import SwiftSyntax
 
-func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax) -> CodeBlockItemListSyntax {
+// func getTypeOfExpression(expression: ExprSyntax, in file: String) -> String? {
+//	let offset = expression.positionAfterSkippingLeadingTrivia.utf8Offset
+//
+//
+//
+//	let request: SourceKitObject = [
+//		"key.request": "source.request.cursorinfo",
+//		"key.sourcefile": file,
+//		"key.offset": offset,
+//	]
+//
+//	if let response = try? Request.customRequest(request: request).send(),
+//	   let typeName = response["key.typename"] as? String {
+//		return typeName
+//	}
+//	return nil
+// }
+
+func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) -> CodeBlockItemListSyntax {
 	var newItems = [CodeBlockItemSyntax]()
 
 	newItems.append("var ___err: Error? = nil")
 
 	for item in codeBlockItemList {
 		if let guardStmt = item.item.as(GuardStmtSyntax.self),
-		   let condition = guardStmt.conditions.first?.condition.as(OptionalBindingConditionSyntax.self),
-		   let tryExpr = condition.initializer?.value.as(TryExprSyntax.self)
-
+		   let condition = guardStmt.conditions.first?.condition.as(OptionalBindingConditionSyntax.self)
 		{
-			let functionCall = tryExpr.expression
+			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
+				let functionCall = tryExpr.expression
 
-			let expandedText = """
-			guard let \(condition.pattern)= Result(catching: {
-				try \(functionCall)
-			}).to(&___err) else {
-				let err = ___err!
-				let nserr = err as NSError
-				\(guardStmt.body.statements)
+				let expandedText = """
+				guard let \(condition.pattern)= Result(catching: {
+					try \(functionCall)
+				}).to(&___err) else {
+					let err = ___err!
+					let nserr = err as NSError
+					\(guardStmt.body.statements)
+				}
+				"""
+
+				let expandedItem = Parser.parse(source: expandedText).statements
+
+				newItems.append(contentsOf: expandedItem)
+
+				continue
+			} else if let functionCall = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
+				let fc = "\(functionCall)".trimmingCharacters(in: .whitespacesAndNewlines)
+				if fc.hasSuffix(".err()") {
+					let expandedText = """
+						guard let \(condition.pattern)= \(fc.dropLast(6)).to(&___err) else {
+						let err = ___err!
+						let nserr = err as NSError
+						\(guardStmt.body.statements)
+					}
+					"""
+
+					let expandedItem = Parser.parse(source: expandedText).statements
+
+					newItems.append(contentsOf: expandedItem)
+					continue
+				}
 			}
-			"""
 
-			let expandedItem = Parser.parse(source: expandedText).statements
-
-			newItems.append(contentsOf: expandedItem)
-
-			continue
+			print(guardStmt.conditions)
 		}
 		newItems.append(item)
 	}
@@ -50,7 +86,7 @@ public struct Err: BodyMacro {
 	) throws -> [CodeBlockItemSyntax] {
 		let selfdecl = declaration as! FunctionDeclSyntax
 		if let body = selfdecl.body {
-			return expandMacro(in: body.statements) + []
+			return expandMacro(in: body.statements, file: "\(body)") + []
 		} else {
 			return []
 		}

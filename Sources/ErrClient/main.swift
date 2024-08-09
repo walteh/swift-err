@@ -13,7 +13,7 @@ func checker() -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard let res3 = try Result(catching: { try myThrowingFunc(12) }).get() else {
+	guard let res3 = Result(catching: { try myThrowingFunc(12) }).err() else {
 		return .failure(err)
 	}
 

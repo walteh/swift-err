@@ -10,6 +10,7 @@ import XCTest
 
 	let testMacros: [String: Macro.Type] = [
 		"err": Err.self,
+		"err_traced": ErrTraced.self,
 	]
 #endif
 
@@ -36,7 +37,7 @@ final class ErrTests: XCTestCase {
 				expandedSource: """
 				func hi() -> Result<String, Error> {
 					var ___err: Error? = nil
-					guard let res = Result.create(catching: {
+					guard let res = Result.___err___create(catching: {
 							try myThrowingFunc(12)
 						}).___to(&___err) else {
 						let err = ___err!
@@ -100,6 +101,38 @@ final class ErrTests: XCTestCase {
 				func hi() -> Result<String, Error> {
 					var ___err: Error? = nil
 					guard let res = myResultFunc(12).___to(&___err) else {
+						let err = ___err!
+
+						print(err)
+						return .failure(err)
+					}
+					return .success(res)
+				}
+				""",
+				macros: testMacros,
+				indentationWidth: .tab
+			)
+		#else
+			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
+
+	func testMacroDeepWithResultAndLargeBodyTraced() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err_traced func hi() -> Result<String, Error> {
+					guard let res = myResultFunc(12).err() else {
+						print(err)
+						return .failure(err)
+					}
+					return .success(res)
+				}
+				""",
+				expandedSource: """
+				func hi() -> Result<String, Error> {
+					var ___err: Error? = nil
+					guard let res = myResultFunc(12).___to___traced(&___err) else {
 						let err = ___err!
 
 						print(err)

@@ -39,10 +39,12 @@ private func generateGuardStatement(
 	return statementsd
 }
 
-func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) -> CodeBlockItemListSyntax {
+func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String, trace: Bool = false) -> CodeBlockItemListSyntax {
 	var newItems = [CodeBlockItemSyntax]()
 
 	newItems.append("var ___err: Error? = nil")
+
+	let toStatement = trace ? "___to___traced" : "___to"
 
 	for item in codeBlockItemList {
 		if let guardStmt = item.item.as(GuardStmtSyntax.self),
@@ -53,7 +55,7 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 
 				let expandedText = generateGuardStatement(
 					condition: condition,
-					functionCall: "\(useAwait ? "await " : "")Result.create(catching: {\ntry \(tryExpr.expression)\n}).___to(&___err)",
+					functionCall: "\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(tryExpr.expression)\n}).\(toStatement)(&___err)",
 					guardStmt: guardStmt
 				)
 
@@ -70,7 +72,7 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 				if fc.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
-						functionCall: "\(fc.dropLast(6)).___to(&___err)",
+						functionCall: "\(fc.dropLast(6)).\(toStatement)(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements
@@ -85,7 +87,7 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String) 
 				if fc.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
-						functionCall: "await \(fc.dropLast(6)).___to(&___err)",
+						functionCall: "await \(fc.dropLast(6)).\(toStatement)(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements
@@ -109,7 +111,23 @@ public struct Err: BodyMacro {
 	) throws -> [CodeBlockItemSyntax] {
 		let selfdecl = declaration as! FunctionDeclSyntax
 		if let body = selfdecl.body {
-			return expandMacro(in: body.statements, file: "\(body)") + []
+			return expandMacro(in: body.statements, file: "\(body)", trace: false) + []
+		} else {
+			return []
+		}
+	}
+}
+
+@_spi(ExperimentalLanguageFeature)
+public struct ErrTraced: BodyMacro {
+	public static func expansion(
+		of _: AttributeSyntax,
+		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
+		in _: some MacroExpansionContext
+	) throws -> [CodeBlockItemSyntax] {
+		let selfdecl = declaration as! FunctionDeclSyntax
+		if let body = selfdecl.body {
+			return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
 		} else {
 			return []
 		}
@@ -120,5 +138,6 @@ public struct Err: BodyMacro {
 struct ErrMacroPlugin: CompilerPlugin {
 	let providingMacros: [Macro.Type] = [
 		Err.self,
+		ErrTraced.self,
 	]
 }

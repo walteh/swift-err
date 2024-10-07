@@ -19,12 +19,13 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-syntax.git", from: "600.0.0-latest"),
-		// swift testing
-		.package(url: "https://github.com/apple/swift-testing.git", branch: "main"),
+		.package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0-latest"),
+		.package(url: "https://github.com/swiftlang/swift-testing.git", branch: "main"),
+		.package(url: "https://github.com/swiftlang/swift-format.git", from: "600.0.0-latest"),
 	],
 
 	targets: [
+
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
 		// Targets can depend on other targets in this package and products from dependencies.
 		// Macro implementation that performs the source transformation of a macro.
@@ -44,7 +45,7 @@ let package = Package(
 			name: "ErrClient",
 			dependencies: ["Err"],
 			swiftSettings: [
-				.enableExperimentalFeature("BodyMacros"),
+				.enableExperimentalFeature("BodyMacros")
 			]
 		),
 

@@ -1,19 +1,55 @@
 {
-  "originHash" : "13874d084e30365920d9fdf0c8bbab9e31aeac18aed62a2976fdbc516474281e",
+  "originHash" : "8f9f3dee661dbc1700c0a765d0c7cd3a0de669530731d05e0ec35249fe539026",
   "pins" : [
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
+        "version" : "1.5.0"
+      }
+    },
+    {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-cmark.git",
+      "state" : {
+        "revision" : "3ccff77b2dc5b96b77db3da0d68d28068593fa53",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "swift-format",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-format.git",
+      "state" : {
+        "revision" : "65f9da9aad84adb7e2028eb32ca95164aa590e3b",
+        "version" : "600.0.0"
+      }
+    },
+    {
+      "identity" : "swift-markdown",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-markdown.git",
+      "state" : {
+        "revision" : "8f79cb175981458a0a27e76cb42fee8e17b1a993",
+        "version" : "0.5.0"
+      }
+    },
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-syntax.git",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
       "state" : {
-        "revision" : "06b5cdc432e93b60e3bdf53aff2857c6b312991a",
-        "version" : "600.0.0-prerelease-2024-07-30"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     },
     {
       "identity" : "swift-testing",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-testing.git",
+      "location" : "https://github.com/swiftlang/swift-testing.git",
       "state" : {
         "branch" : "main",
         "revision" : "b4420784c972c96a34b70cf566395d16b9f00900"

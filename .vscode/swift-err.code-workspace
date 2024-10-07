@@ -2,21 +2,21 @@
 	"folders": [
 		{
 			"path": "../"
-		}, 
+		},
 		{
 			"path": "../ErrMacro",
 		}
 	],
-
 	"settings": {
-		"swiftlint.enable": false,
+		"swift.sourcekit-lsp.disable": false,
 		"swiftformat.enable": true,
-	"[swift]": {
+		// "swift"
+		"[swift]": {
+			"editor.formatOnSave": true,
+			"editor.defaultFormatter": "sswg.swift-lang"
+			// "editor.defaultFormatter": "vknabel.vscode-swiftformat"
+		},
 		"editor.formatOnSave": true,
-		"editor.defaultFormatter": "vknabel.vscode-swiftformat"
-	},
-	"lldb.launch.expressions": "native",
-	"cmake.options.statusBarVisibility": "visible",
-	"lldb.library": "/Applications/Xcode-beta.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB",
+		"cmake.options.statusBarVisibility": "visible"
 	}
 }

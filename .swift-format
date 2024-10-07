@@ -1,0 +1,20 @@
+{
+	"version": 1,
+	"lineLength": 100,
+	"indentation": {
+		"tabs": 1
+	},
+	"tabWidth": 4,
+	"lineBreakBeforeEachArgument": true,
+	"indentConditionalCompilationBlocks": true,
+	"prioritizeKeepingFunctionOutputTogether": true,
+	"multiElementCollectionTrailingCommas": true,
+	"rules": {
+		"AlwaysUseLowerCamelCase": false,
+		"AmbiguousTrailingClosureOverload": false,
+		"NoBlockComments": false,
+		"OrderedImports": true,
+		"UseLetInEveryBoundCaseVariable": false,
+		"UseSynthesizedInitializer": false
+	}
+}

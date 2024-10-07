@@ -4,7 +4,6 @@ import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxBuilder
 @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
-import SwiftSyntax
 
 private func generateGuardStatement(
 	condition: OptionalBindingConditionSyntax,
@@ -16,8 +15,16 @@ private func generateGuardStatement(
 	let includeErr = statements.contains("err") || includeNSErr
 
 	// Extract leading trivia as a string
-	let guardLeadingTrivia = String(bytes: guardStmt.syntaxTextBytes.prefix(guardStmt.leadingTriviaLength.utf8Length), encoding: .utf8)!
-	var bodyLeadingTrivia = String(bytes: guardStmt.body.statements.syntaxTextBytes.prefix(guardStmt.body.statements.leadingTriviaLength.utf8Length), encoding: .utf8)!
+	let guardLeadingTrivia = String(
+		bytes: guardStmt.syntaxTextBytes.prefix(guardStmt.leadingTriviaLength.utf8Length),
+		encoding: .utf8
+	)!
+	var bodyLeadingTrivia = String(
+		bytes: guardStmt.body.statements.syntaxTextBytes.prefix(
+			guardStmt.body.statements.leadingTriviaLength.utf8Length
+		),
+		encoding: .utf8
+	)!
 
 	if bodyLeadingTrivia.hasPrefix(guardLeadingTrivia) {
 		bodyLeadingTrivia.trimPrefix(guardLeadingTrivia)
@@ -30,7 +37,8 @@ private func generateGuardStatement(
 		states.append("\n\(bodyLeadingTrivia)\(stmtString)")
 	}
 
-	let statementsd = "guard let \(condition.pattern)=\(functionCall) else {\n"
+	let statementsd =
+		"guard let \(condition.pattern)=\(functionCall) else {\n"
 		+ "\(includeErr ? "\(bodyLeadingTrivia)let err = ___err!\n" : "")"
 		+ "\(includeNSErr ? "\(bodyLeadingTrivia)let nserr = err as NSError\n" : "")"
 		+ "\(states.joined(separator: ""))"
@@ -39,7 +47,12 @@ private func generateGuardStatement(
 	return statementsd
 }
 
-func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String, trace: Bool = false) -> CodeBlockItemListSyntax {
+func expandMacro(
+	in codeBlockItemList: CodeBlockItemListSyntax,
+	file _: String,
+	trace: Bool = false
+) -> CodeBlockItemListSyntax {
+
 	var newItems = [CodeBlockItemSyntax]()
 
 	newItems.append("var ___err: Error? = nil")
@@ -48,14 +61,19 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String, 
 
 	for item in codeBlockItemList {
 		if let guardStmt = item.item.as(GuardStmtSyntax.self),
-		   let condition = guardStmt.conditions.first?.condition.as(OptionalBindingConditionSyntax.self)
+			let condition = guardStmt.conditions.first?.condition.as(
+				OptionalBindingConditionSyntax.self
+			)
 		{
 			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
 				let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
 
+				let full =
+					"\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(tryExpr.expression)\n}).\(toStatement)(&___err)"
+
 				let expandedText = generateGuardStatement(
 					condition: condition,
-					functionCall: "\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(tryExpr.expression)\n}).\(toStatement)(&___err)",
+					functionCall: full,
 					guardStmt: guardStmt
 				)
 
@@ -64,15 +82,17 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String, 
 				newItems.append(contentsOf: expandedItem)
 
 				continue
-			} else if let functionCall = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
-				let fc = "\(functionCall)".trimmingCharacters(in: .whitespacesAndNewlines)
+			} else if let functionCall = condition.initializer?.value.as(
+				FunctionCallExprSyntax.self
+			) {
+				let functionCallTrimmed = "\(functionCall)".trimmingCharacters(
+					in: .whitespacesAndNewlines
+				)
 
-				// let useAwait = functionCall.calledExpression.as(AwaitExprSyntax.self) != nil
-
-				if fc.hasSuffix(".err()") {
+				if functionCallTrimmed.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
-						functionCall: "\(fc.dropLast(6)).\(toStatement)(&___err)",
+						functionCall: "\(functionCallTrimmed.dropLast(6)).\(toStatement)(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements
@@ -80,14 +100,17 @@ func expandMacro(in codeBlockItemList: CodeBlockItemListSyntax, file _: String, 
 					continue
 				}
 			} else if let functionCall = condition.initializer?.value.as(AwaitExprSyntax.self) {
-				let fc = "\(functionCall.expression)".trimmingCharacters(in: .whitespacesAndNewlines)
+				let functionCallTrimmed = "\(functionCall.expression)".trimmingCharacters(
+					in: .whitespacesAndNewlines
+				)
 
 				// let useAwait = functionCall.calledExpression.as(AwaitExprSyntax.self) != nil
 
-				if fc.hasSuffix(".err()") {
+				if functionCallTrimmed.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
-						functionCall: "await \(fc.dropLast(6)).\(toStatement)(&___err)",
+						functionCall:
+							"await \(functionCallTrimmed.dropLast(6)).\(toStatement)(&___err)",
 						guardStmt: guardStmt
 					)
 					let expandedItem = Parser.parse(source: expandedText).statements
@@ -109,12 +132,12 @@ public struct Err: BodyMacro {
 		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
-		let selfdecl = declaration as! FunctionDeclSyntax
-		if let body = selfdecl.body {
-			return expandMacro(in: body.statements, file: "\(body)", trace: false) + []
-		} else {
-			return []
+		if let selfdecl = declaration as? FunctionDeclSyntax {
+			if let body = selfdecl.body {
+				return expandMacro(in: body.statements, file: "\(body)") + []
+			}
 		}
+		return []
 	}
 }
 
@@ -125,12 +148,12 @@ public struct ErrTraced: BodyMacro {
 		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
-		let selfdecl = declaration as! FunctionDeclSyntax
-		if let body = selfdecl.body {
-			return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
-		} else {
-			return []
+		if let selfdecl = declaration as? FunctionDeclSyntax {
+			if let body = selfdecl.body {
+				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
+			}
 		}
+		return []
 	}
 }
 

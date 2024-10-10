@@ -104,8 +104,6 @@ func expandMacro(
 					in: .whitespacesAndNewlines
 				)
 
-				// let useAwait = functionCall.calledExpression.as(AwaitExprSyntax.self) != nil
-
 				if functionCallTrimmed.hasSuffix(".err()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,

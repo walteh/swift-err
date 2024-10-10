@@ -8,15 +8,17 @@ let package = Package(
 	name: "swift-err",
 	platforms: [.macOS(.v13), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
 	products: [
-		// Products define the executables and libraries a package produces, making them visible to other packages.
+
 		.library(
 			name: "Err",
 			targets: ["Err"]
 		),
+
 		.executable(
-			name: "ErrClient",
-			targets: ["ErrClient"]
+			name: "ErrSamples",
+			targets: ["ErrSamples"]
 		),
+
 	],
 	dependencies: [
 		.package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0-latest"),
@@ -26,9 +28,6 @@ let package = Package(
 
 	targets: [
 
-		// Targets are the basic building blocks of a package, defining a module or a test suite.
-		// Targets can depend on other targets in this package and products from dependencies.
-		// Macro implementation that performs the source transformation of a macro.
 		.macro(
 			name: "ErrMacros",
 			dependencies: [
@@ -37,24 +36,29 @@ let package = Package(
 			]
 		),
 
-		// Library that exposes a macro as part of its API, which is used in client programs.
 		.target(name: "Err", dependencies: ["ErrMacros"]),
 
-		// A client of the library, which is able to use the macro in its own code.
 		.executableTarget(
-			name: "ErrClient",
+			name: "ErrSamples",
 			dependencies: ["Err"],
 			swiftSettings: [
 				.enableExperimentalFeature("BodyMacros")
 			]
 		),
 
-		// A test target used to develop the macro implementation.
 		.testTarget(
-			name: "ErrTests",
+			name: "ErrMacrosTests",
 			dependencies: [
 				"ErrMacros",
 				.product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+				.product(name: "Testing", package: "swift-testing"),
+			]
+		),
+
+		.testTarget(
+			name: "ErrTests",
+			dependencies: [
+				"Err",
 				.product(name: "Testing", package: "swift-testing"),
 			]
 		),

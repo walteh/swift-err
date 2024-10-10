@@ -1,150 +1,133 @@
-import SwiftSyntax
-import SwiftSyntaxBuilder
-import SwiftSyntaxMacros
-import SwiftSyntaxMacrosTestSupport
+import Err
 import XCTest
 
-#if canImport(ErrMacros)
-	@_spi(ExperimentalLanguageFeature) import ErrMacros
-
-	let testMacros: [String: Macro.Type] = [
-		"err": Err.self,
-		"err_traced": ErrTraced.self,
-	]
-#endif
-
-func myThrowingFunc(_ arg: Int) throws -> UInt32 {
-	return UInt32(arg)
-}
-
-func myResultFunc(_ arg: Int) -> Result<UInt32, Error> {
-	return .success(UInt32(arg))
+func dummyAsyncFunc<T>(_ arg: consuming T, _ err: consuming Error?) async throws -> T {
+	if let err = err {
+		throw err
+	}
+	return arg
 }
 
 final class ErrTests: XCTestCase {
-	func testMacroDeep() throws {
-		#if canImport(ErrMacros)
-			assertMacroExpansion(
-				"""
-				@err func hi() -> Result<String, Error> {
-					guard let res = try myThrowingFunc(12) else {
-						return .failure(err)
-					}
-					return .success(res)
-				}
-				""",
-				expandedSource: """
-					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = Result.___err___create(catching: {
-								try myThrowingFunc(12)
-							}).___to(&___err) else {
-							let err = ___err!
+	func testTo() {
+		var error: Error?
 
-							return .failure(err)
-						}
-						return .success(res)
-					}
-					""",
-				macros: testMacros,
-				indentationWidth: .tab
-			)
-		#else
-			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
-		#endif
+		// Test success case
+		let successResult: Result<Int, Error> = .success(42)
+		let successValue = successResult.___to(&error)
+		XCTAssertEqual(successValue, 42)
+		XCTAssertNil(error)
+
+		// Test failure case
+		let failureResult: Result<Int, Error> = .failure(
+			NSError(domain: "Test", code: 1, userInfo: nil)
+		)
+		let failureValue = failureResult.___to(&error)
+		XCTAssertNil(failureValue)
+		XCTAssertNotNil(error)
 	}
 
-	func testMacroDeepWithResult() throws {
-		#if canImport(ErrMacros)
-			assertMacroExpansion(
-				"""
-				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
-						return .failure(err)
-					}
-					return .success(res)
-				}
-				""",
-				expandedSource: """
-					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
+	func testToTraced() {
+		var error: Error?
 
-							return .failure(err)
-						}
-						return .success(res)
-					}
-					""",
-				macros: testMacros,
-				indentationWidth: .tab
-			)
-		#else
-			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
-		#endif
+		// Test success case
+		let successResult: Result<String, Error> = .success("Hello")
+		let successValue = successResult.___to___traced(&error)
+		XCTAssertEqual(successValue, "Hello")
+		XCTAssertNil(error)
+
+		// Test failure case
+		let failureResult: Result<String, Error> = .failure(
+			NSError(domain: "Test", code: 2, userInfo: nil)
+		)
+		let failureValue = failureResult.___to___traced(&error)
+		XCTAssertNil(failureValue)
+		XCTAssertNotNil(error)
+		XCTAssertTrue(error is TraceableError)
+		if let traceableError = error as? TraceableError {
+			XCTAssertEqual(traceableError.file, #file)
+			XCTAssertEqual(traceableError.function, #function)
+			XCTAssertEqual(traceableError.line, #line - 7)  // Adjust this based on the actual line number
+		}
 	}
 
-	func testMacroDeepWithResultAndLargeBody() throws {
-		#if canImport(ErrMacros)
-			assertMacroExpansion(
-				"""
-				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
-						print(err)
-						return .failure(err)
-					}
-					return .success(res)
-				}
-				""",
-				expandedSource: """
-					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
+	func testErrCreate() {
+		// Test success case
+		let successResult = Result<Int, Error>.___err___create {
+			return 42
+		}
+		XCTAssertEqual(try successResult.get(), 42)
 
-							print(err)
-							return .failure(err)
-						}
-						return .success(res)
-					}
-					""",
-				macros: testMacros,
-				indentationWidth: .tab
-			)
-		#else
-			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
-		#endif
+		// Test failure case
+		let failureResult = Result<Int, Error>.___err___create {
+			throw NSError(domain: "Test", code: 3, userInfo: nil)
+		}
+		XCTAssertThrowsError(try failureResult.get()) { error in
+			XCTAssertEqual((error as NSError).code, 3)
+		}
 	}
 
-	func testMacroDeepWithResultAndLargeBodyTraced() throws {
-		#if canImport(ErrMacros)
-			assertMacroExpansion(
-				"""
-				@err_traced func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
-						print(err)
-						return .failure(err)
-					}
-					return .success(res)
-				}
-				""",
-				expandedSource: """
-					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to___traced(&___err) else {
-							let err = ___err!
+	func testAsyncErrCreate() async {
+		// Test success case
+		let successResult = await Result<String, Error>.___err___create {
+			return try await dummyAsyncFunc("Async Success", nil)
+		}
+		XCTAssertEqual(try successResult.get(), "Async Success")
 
-							print(err)
-							return .failure(err)
-						}
-						return .success(res)
-					}
-					""",
-				macros: testMacros,
-				indentationWidth: .tab
+		// Test failure case
+		let failureResult = await Result<String, Error>.___err___create {
+			return try await dummyAsyncFunc(
+				"Async Failure",
+				NSError(domain: "Test", code: 4, userInfo: nil)
 			)
-		#else
-			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
-		#endif
+		}
+		XCTAssertThrowsError(try failureResult.get()) { error in
+			XCTAssertEqual((error as NSError).code, 4)
+		}
+	}
+
+	func testErrCreateTracing() {
+		// Test success case
+		let successResult = Result<Double, Error>.___err___create(tracing: {
+			return 3.14
+		})
+		XCTAssertEqual(try successResult.get(), 3.14)
+
+		// Test failure case
+		let failureResult = Result<Double, Error>.___err___create(tracing: {
+			throw NSError(domain: "Test", code: 5, userInfo: nil)
+		})
+		XCTAssertThrowsError(try failureResult.get()) { error in
+			XCTAssertTrue(error is TraceableError)
+			if let traceableError = error as? TraceableError {
+				XCTAssertEqual(traceableError.file, #fileID)
+				XCTAssertEqual(traceableError.function, #function)
+				XCTAssertEqual((traceableError.root as NSError).code, 5)
+			}
+		}
+	}
+
+	func testAsyncErrCreateTracing() async {
+		// Test success case
+		let successResult = await Result<[Int], Error>.___err___create(tracing: {
+			return try await dummyAsyncFunc([1, 2, 3], nil)
+		})
+		XCTAssertEqual(try successResult.get(), [1, 2, 3])
+
+		// Test failure case
+		let failureResult = await Result<[Int], Error>.___err___create(tracing: {
+			return try await dummyAsyncFunc(
+				[4, 5, 6],
+				NSError(domain: "Test", code: 6, userInfo: nil)
+			)
+		})
+		XCTAssertThrowsError(try failureResult.get()) { error in
+			XCTAssertTrue(error is TraceableError)
+			if let traceableError = error as? TraceableError {
+				XCTAssertEqual(traceableError.file, #fileID)
+				XCTAssertEqual(traceableError.function, #function)
+				XCTAssertEqual((traceableError.root as NSError).code, 6)
+			}
+		}
 	}
 }

@@ -7,12 +7,12 @@ public macro err() = #externalMacro(module: "ErrMacros", type: "Err")
 @attached(body)
 public macro err_traced() = #externalMacro(module: "ErrMacros", type: "ErrTraced")
 
-struct TraceableError: Error {
-	let line: UInt
-	let file: String
-	let function: String
+public struct TraceableError: Error {
+	public let line: UInt
+	public let file: String
+	public let function: String
 
-	let root: Error
+	public let root: Error
 }
 
 public extension Result {
@@ -26,12 +26,17 @@ public extension Result {
 		}
 	}
 
-	func ___to___traced(_ err: inout Error?) -> (Success?) {
+	func ___to___traced(
+		_ err: inout Error?,
+		__file: String = #fileID,
+		__function: String = #function,
+		__line: UInt = #line
+	) -> (Success?) {
 		switch self {
 		case let .success(value):
 			return value
 		case let .failure(error):
-			err = TraceableError(line: #line, file: #file, function: #function, root: error)
+			err = TraceableError(line: __line, file: __file, function: __function, root: error)
 			return nil
 		}
 	}

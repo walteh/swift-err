@@ -50,14 +50,25 @@ private func generateGuardStatement(
 func expandMacro(
 	in codeBlockItemList: CodeBlockItemListSyntax,
 	file _: String,
-	trace: Bool = false
+	trace: Bool = false,
+	extras: Bool = true
 ) -> CodeBlockItemListSyntax {
-
 	var newItems = [CodeBlockItemSyntax]()
-
-	newItems.append("var ___err: Error? = nil")
+	if extras {
+		newItems.append("var ___err: Error? = nil\n")
+	}
 
 	let toStatement = trace ? "___to___traced" : "___to"
+
+	func processClosureExpr(_ closureExpr: ClosureExprSyntax) -> ClosureExprSyntax {
+		let processedStatements = expandMacro(
+			in: closureExpr.statements,
+			file: "\(closureExpr.statements)",
+			trace: trace,
+			extras: true
+		)
+		return closureExpr.with(\.statements, processedStatements)
+	}
 
 	for item in codeBlockItemList {
 		if let guardStmt = item.item.as(GuardStmtSyntax.self),
@@ -65,11 +76,34 @@ func expandMacro(
 				OptionalBindingConditionSyntax.self
 			)
 		{
+
 			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
 				let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
 
+				var expr = tryExpr.expression
+
+				if let functionCall = tryExpr.expression.as(FunctionCallExprSyntax.self) {
+					var newArguments = [LabeledExprSyntax]()
+					for arg in functionCall.arguments {
+						if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
+							let processedClosure = processClosureExpr(closureExpr)
+							newArguments.append(
+								arg.with(\.expression, ExprSyntax(processedClosure))
+							)
+						} else {
+							newArguments.append(arg)
+						}
+					}
+					let newFunctionCall = functionCall.with(
+						\.arguments,
+						LabeledExprListSyntax(newArguments)
+					)
+
+					expr = ExprSyntax(newFunctionCall)
+				}
+
 				let full =
-					"\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(tryExpr.expression)\n}).\(toStatement)(&___err)"
+					"\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(expr)\n}).\(toStatement)(&___err)"
 
 				let expandedText = generateGuardStatement(
 					condition: condition,
@@ -85,7 +119,20 @@ func expandMacro(
 			} else if let functionCall = condition.initializer?.value.as(
 				FunctionCallExprSyntax.self
 			) {
-				let functionCallTrimmed = "\(functionCall)".trimmingCharacters(
+				var newArguments = [LabeledExprSyntax]()
+				for arg in functionCall.arguments {
+					if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
+						let processedClosure = processClosureExpr(closureExpr)
+						newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
+					} else {
+						newArguments.append(arg)
+					}
+				}
+				let newFunctionCall = functionCall.with(
+					\.arguments,
+					LabeledExprListSyntax(newArguments)
+				)
+				let functionCallTrimmed = "\(newFunctionCall)".trimmingCharacters(
 					in: .whitespacesAndNewlines
 				)
 
@@ -99,8 +146,24 @@ func expandMacro(
 					newItems.append(contentsOf: expandedItem)
 					continue
 				}
-			} else if let functionCall = condition.initializer?.value.as(AwaitExprSyntax.self) {
-				let functionCallTrimmed = "\(functionCall.expression)".trimmingCharacters(
+
+			} else if let aw = condition.initializer?.value.as(AwaitExprSyntax.self),
+				let functionCall = aw.expression.as(FunctionCallExprSyntax.self)
+			{
+				var newArguments = [LabeledExprSyntax]()
+				for arg in functionCall.arguments {
+					if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
+						let processedClosure = processClosureExpr(closureExpr)
+						newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
+					} else {
+						newArguments.append(arg)
+					}
+				}
+				let newFunctionCall = functionCall.with(
+					\.arguments,
+					LabeledExprListSyntax(newArguments)
+				)
+				let functionCallTrimmed = "\(newFunctionCall)".trimmingCharacters(
 					in: .whitespacesAndNewlines
 				)
 
@@ -115,13 +178,49 @@ func expandMacro(
 					newItems.append(contentsOf: expandedItem)
 					continue
 				}
+			} else {
+				newItems.append(item)
 			}
+		} else if let returnStmt = item.item.as(ReturnStmtSyntax.self),
+			let functionCall = returnStmt.expression?.as(FunctionCallExprSyntax.self)
+		{
+			var newArguments = [LabeledExprSyntax]()
+			for arg in functionCall.arguments {
+				if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
+					let processedClosure = processClosureExpr(closureExpr)
+					newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
+				} else {
+					newArguments.append(arg)
+				}
+			}
+			let newFunctionCall = functionCall.with(
+				\.arguments,
+				LabeledExprListSyntax(newArguments)
+			)
+			let newReturnStmt = returnStmt.with(\.expression, ExprSyntax(newFunctionCall))
+			newItems.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(newReturnStmt))))
+		} else {
+			newItems.append(item)
 		}
-		newItems.append(item)
 	}
 
 	return CodeBlockItemListSyntax(newItems)
 }
+
+// func generateGuardStatement(
+// 	condition: OptionalBindingConditionSyntax,
+// 	functionCall: String,
+// 	guardStmt: GuardStmtSyntax
+// ) -> String {
+// 	let pattern = condition.pattern.description
+// 	let body = guardStmt.body.description.trimmingCharacters(in: .whitespacesAndNewlines)
+// 	return """
+// 		guard let \(pattern) = \(functionCall) else {
+// 		    let err = ___err!
+// 		    \(body)
+// 		}
+// 		"""
+// }
 
 @_spi(ExperimentalLanguageFeature)
 public struct Err: BodyMacro {
@@ -138,6 +237,9 @@ public struct Err: BodyMacro {
 			if let body = selfdecl.body {
 				return expandMacro(in: body.statements, file: "\(body)") + []
 			}
+		} else if let selfdecl = declaration as? ClosureExprSyntax {
+			return expandMacro(in: selfdecl.statements, file: "\(selfdecl.statements)") + []
+
 		}
 		return []
 	}
@@ -148,6 +250,7 @@ public struct ErrTraced: BodyMacro {
 	public static func expansion(
 		of _: AttributeSyntax,
 		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
+
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
 		if let selfdecl = declaration as? FunctionDeclSyntax {
@@ -158,6 +261,10 @@ public struct ErrTraced: BodyMacro {
 			if let body = selfdecl.body {
 				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
 			}
+		} else if let selfdecl = declaration as? ClosureExprSyntax {
+			return expandMacro(in: selfdecl.statements, file: "\(selfdecl.statements)", trace: true)
+				+ []
+
 		}
 		return []
 	}

@@ -147,4 +147,43 @@ final class ErrMacrosTests: XCTestCase {
 			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
 		#endif
 	}
+
+	func testMacroDeepWithResultAndLargeBodyNested() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err func hi() -> Result<String, Error> {
+					return myResultFunc({
+						guard let res = myResultFunc(12).get() else {
+							print(err)
+							return .failure(err)
+						}
+
+						return .success(res)
+					})
+				}
+				""",
+				expandedSource: """
+					func hi() -> Result<String, Error> {
+						var ___err: Error? = nil
+						return myResultFunc({
+								var ___err: Error? = nil
+								guard let res = myResultFunc(12).___to(&___err) else {
+									let err = ___err!
+
+									print(err)
+									return .failure(err)
+								}
+
+										return .success(res)
+							})
+					}
+					""",
+				macros: testMacros,
+				indentationWidth: .tab
+			)
+		#else
+			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
 }

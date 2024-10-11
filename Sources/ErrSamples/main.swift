@@ -19,11 +19,16 @@ func myResultFunc(_ arg: Int) -> Result<UInt32, Error> {
 
 struct Hello: Error {}
 
+func myFunctionFunc(_ arg: () throws -> UInt32) throws -> Result<UInt32, Error> {
+	return .success(try arg())
+}
+
 class World {
 	@err init() throws {
 		guard let res = try myThrowingFunc(12) else {
 			throw err
 		}
+		print(res)
 	}
 }
 
@@ -49,7 +54,19 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	return .success("\(res2) \(res3) \(res4) \(res5) \(res6)")
+	guard
+		let res7 = try myFunctionFunc({
+			guard let res = myResultFunc(12).get() else {
+				throw Hello()
+			}
+
+			return res
+		})
+	else {
+		return .failure(err)
+	}
+
+	return .success("\(res2) \(res3) \(res4) \(res5) \(res6) \(res7)")
 }
 
 @err

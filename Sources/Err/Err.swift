@@ -40,10 +40,6 @@ public extension Result {
 			return nil
 		}
 	}
-
-	func err() -> Success? {
-		fatalError("not implemented")
-	}
 }
 
 public extension Result where Failure == Error {

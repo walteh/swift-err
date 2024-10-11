@@ -59,7 +59,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
+					guard let res = myResultFunc(12).get() else {
 						return .failure(err)
 					}
 					return .success(res)
@@ -89,7 +89,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
+					guard let res = myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}
@@ -121,7 +121,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err_traced func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).err() else {
+					guard let res = myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}

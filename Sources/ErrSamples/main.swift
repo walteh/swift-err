@@ -25,7 +25,7 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard let res3 = myResultFunc(12).err() else {
+	guard let res3 = try myResultFunc(12).get() else {
 		return .failure(err)
 	}
 
@@ -37,7 +37,7 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard let res6 = await myResultAsyncFunc(12).err() else {
+	guard let res6 = await myResultAsyncFunc(12).get() else {
 		return .failure(err)
 	}
 

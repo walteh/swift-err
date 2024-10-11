@@ -89,7 +89,7 @@ func expandMacro(
 					in: .whitespacesAndNewlines
 				)
 
-				if functionCallTrimmed.hasSuffix(".err()") {
+				if functionCallTrimmed.hasSuffix(".get()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
 						functionCall: "\(functionCallTrimmed.dropLast(6)).\(toStatement)(&___err)",
@@ -104,7 +104,7 @@ func expandMacro(
 					in: .whitespacesAndNewlines
 				)
 
-				if functionCallTrimmed.hasSuffix(".err()") {
+				if functionCallTrimmed.hasSuffix(".get()") {
 					let expandedText = generateGuardStatement(
 						condition: condition,
 						functionCall:

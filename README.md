@@ -12,11 +12,19 @@ swift-err is a Swift package that provides convenient error handling macros for 
 
 ```swift
 @err
-func example() throws async -> String {
+func throwsExample() throws async -> String {
     guard let result = try await someThrowingFunction() else {
         throw err // "err" is the error thrown by someThrowingFunction
     }
     return result
+}
+
+@err
+func resultExample() async -> Result<String, Error> {
+    guard let result = await someResultFunction().get() else {
+        return .failure(err) // "err" is the error thrown by someResultFunction
+    }
+    return .success(result)
 }
 ```
 
@@ -89,6 +97,13 @@ The `@err` and `@err_traced` macros expand to code that captures the error from 
 @err
 func example() throws -> String {
     guard let result = try someThrowingFunction() else {
+        throw err
+    }
+    return result
+}
+
+func example() throws -> String {
+    guard let result = someResultFunction().get() else {
         throw err
     }
     return result

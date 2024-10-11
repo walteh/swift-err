@@ -41,7 +41,7 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	return .success("ok")
+	return .success("\(res2) \(res3) \(res4) \(res5) \(res6)")
 }
 
 @err

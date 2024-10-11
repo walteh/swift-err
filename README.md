@@ -1,12 +1,24 @@
-# Swift-Err
+# swift-err
 
-Swift-Err is a Swift package that provides convenient error handling macros for Swift projects, allowing for more expressive and type-safe error handling.
+swift-err is a Swift package that provides convenient error handling macros for Swift projects, allowing for more expressive and type-safe error handling.
 
 ## Features
 
-- `@err` macro for simplified error handling
-- `@err_traced` macro for error handling with location tracing
-- Works with any function that can throw, not just those returning `Result`
+- `@err` function macro to access thrown errors in guard else statements
+- `@err_traced` to include trace information in thrown errors (file, line, function)
+- Works with any function that can throw
+
+## Example
+
+```swift
+@err
+func example() throws async -> String {
+    guard let result = try someThrowingFunction() else {
+        throw err // "err" is the error thrown by someThrowingFunction
+    }
+    return result
+}
+```
 
 ## Installation
 

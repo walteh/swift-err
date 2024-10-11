@@ -5,15 +5,15 @@ swift-err is a Swift package that provides convenient error handling macros for 
 ## Features
 
 - `@err` function macro to access thrown errors in guard else statements
-- `@err_traced` to include trace information in thrown errors (file, line, function)
-- Works with any function that can throw
+- `@err_traced` includes trace information in thrown errors (file, line, function)
+- Works with any function that can throw, including async functions
 
 ## Example
 
 ```swift
 @err
 func example() throws async -> String {
-    guard let result = try someThrowingFunction() else {
+    guard let result = try await someThrowingFunction() else {
         throw err // "err" is the error thrown by someThrowingFunction
     }
     return result

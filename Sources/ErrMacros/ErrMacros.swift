@@ -178,9 +178,9 @@ func expandMacro(
 					newItems.append(contentsOf: expandedItem)
 					continue
 				}
-			} else {
-				newItems.append(item)
 			}
+			newItems.append(item)
+
 		} else if let returnStmt = item.item.as(ReturnStmtSyntax.self),
 			let functionCall = returnStmt.expression?.as(FunctionCallExprSyntax.self)
 		{

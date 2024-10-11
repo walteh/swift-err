@@ -134,6 +134,10 @@ public struct Err: BodyMacro {
 			if let body = selfdecl.body {
 				return expandMacro(in: body.statements, file: "\(body)") + []
 			}
+		} else if let selfdecl = declaration as? InitializerDeclSyntax {
+			if let body = selfdecl.body {
+				return expandMacro(in: body.statements, file: "\(body)") + []
+			}
 		}
 		return []
 	}
@@ -147,6 +151,10 @@ public struct ErrTraced: BodyMacro {
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
 		if let selfdecl = declaration as? FunctionDeclSyntax {
+			if let body = selfdecl.body {
+				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
+			}
+		} else if let selfdecl = declaration as? InitializerDeclSyntax {
 			if let body = selfdecl.body {
 				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
 			}

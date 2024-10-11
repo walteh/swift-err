@@ -19,6 +19,14 @@ func myResultFunc(_ arg: Int) -> Result<UInt32, Error> {
 
 struct Hello: Error {}
 
+class World {
+	@err init() throws {
+		guard let res = try myThrowingFunc(12) else {
+			throw err
+		}
+	}
+}
+
 @err
 func checker() async -> Result<String, Error> {
 	guard let res2 = try myThrowingFunc(12) else {

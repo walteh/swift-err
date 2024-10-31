@@ -7,6 +7,9 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
 class GuardStatementVisitor: SyntaxRewriter {
+
+	var traced: Bool = false
+
 	override func visit(_ node: GuardStmtSyntax) -> StmtSyntax {
 		// print("===== BEFORE =====")
 		// print(node)
@@ -97,7 +100,7 @@ class GuardStatementVisitor: SyntaxRewriter {
 			FunctionCallExprSyntax(
 				calledExpression: MemberAccessExprSyntax(
 					base: createExpr,
-					name: .identifier("___to")
+					name: .identifier(traced ? "___to_traced" : "___to")
 				),
 				leftParen: .leftParenToken(),
 				arguments: LabeledExprListSyntax([
@@ -232,7 +235,9 @@ public struct Err: BodyMacro {
 	) throws -> [CodeBlockItemSyntax] {
 		guard let body = declaration.body else { return [] }
 
-		let result: CodeBlockSyntax = GuardStatementVisitor(viewMode: .sourceAccurate).visit(body)
+		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
+
+		let result: CodeBlockSyntax = visitor.visit(body)
 
 		// add an indentation to the result
 		return [] + result.statements + []
@@ -247,20 +252,14 @@ public struct ErrTraced: BodyMacro {
 
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
-		// if let selfdecl = declaration as? FunctionDeclSyntax {
-		// 	if let body = selfdecl.body {
-		// 		return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
-		// 	}
-		// } else if let selfdecl = declaration as? InitializerDeclSyntax {
-		// 	if let body = selfdecl.body {
-		// 		return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
-		// 	}
-		// } else if let selfdecl = declaration as? ClosureExprSyntax {
-		// 	return expandMacro(in: selfdecl.statements, file: "\(selfdecl.statements)", trace: true)
-		// 		+ []
+		guard let body = declaration.body else { return [] }
 
-		// }
-		return []
+		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
+		visitor.traced = true
+		let result: CodeBlockSyntax = visitor.visit(body)
+
+		// add an indentation to the result
+		return [] + result.statements + []
 	}
 }
 

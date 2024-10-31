@@ -35,14 +35,13 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = Result.___err___create(catching: {
-								try myThrowingFunc(12)
-							}).___to(&___err) else {
-							let err = ___err!
 
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myThrowingFunc(12)
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -59,7 +58,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						return .failure(err)
 					}
 					return .success(res)
@@ -67,12 +66,13 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
 
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -89,7 +89,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}
@@ -98,13 +98,14 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
 
-							print(err)
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								print(err)
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -121,7 +122,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err_traced func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}
@@ -130,13 +131,14 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to___traced(&___err) else {
-							let err = ___err!
 
-							print(err)
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to_traced(&___err_1) else {
+								let err: Error = ___err_1!
+								print(err)
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",

@@ -35,14 +35,13 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = Result.___err___create(catching: {
-								try myThrowingFunc(12)
-							}).___to(&___err) else {
-							let err = ___err!
 
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myThrowingFunc(12)
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -59,7 +58,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						return .failure(err)
 					}
 					return .success(res)
@@ -67,12 +66,13 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
 
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -89,7 +89,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}
@@ -98,13 +98,14 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to(&___err) else {
-							let err = ___err!
 
-							print(err)
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								print(err)
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -121,7 +122,7 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err_traced func hi() -> Result<String, Error> {
-					guard let res = myResultFunc(12).get() else {
+					guard let res = try myResultFunc(12).get() else {
 						print(err)
 						return .failure(err)
 					}
@@ -130,13 +131,14 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						guard let res = myResultFunc(12).___to___traced(&___err) else {
-							let err = ___err!
 
-							print(err)
-							return .failure(err)
-						}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to_traced(&___err_1) else {
+								let err: Error = ___err_1!
+								print(err)
+								return .failure(err)
+							}
 						return .success(res)
 					}
 					""",
@@ -152,9 +154,10 @@ final class ErrMacrosTests: XCTestCase {
 		#if canImport(ErrMacros)
 			assertMacroExpansion(
 				"""
-				@err func hi() -> Result<String, Error> {
+				@err
+				func hi() -> Result<String, Error> {
 					return myResultFunc({
-						guard let res = myResultFunc(12).get() else {
+						guard let res = try myResultFunc(12).get() else {
 							print(err)
 							return .failure(err)
 						}
@@ -165,22 +168,77 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						return myResultFunc({
-								var ___err: Error? = nil
-								guard let res = myResultFunc(12).___to(&___err) else {
-									let err = ___err!
+					return myResultFunc({
 
-									print(err)
-									return .failure(err)
-								}
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
+								print(err)
+								return .failure(err)
+							}
 
-										return .success(res)
-							})
+							return .success(res)
+						})
 					}
 					""",
 				macros: testMacros,
-				indentationWidth: .tab
+				indentationWidth: .tabs(0)
+			)
+		#else
+			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
+
+	func testMacroDeepWithResultAndLargeBodyNestedFunc() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err
+				func hi() -> Result<String, Error> {
+					return myResultFunc({
+						guard let res = try myResultFunc({
+							guard let res = try myResultFunc(12).get() else {
+								print(err)
+								return .failure(err)
+							}
+							return .success(res)
+						}).get() else {
+							print(err)
+							return .failure(err)
+						}
+
+						return .success(res)
+					})
+				}
+				""",
+				expandedSource: """
+					func hi() -> Result<String, Error> {
+					return myResultFunc({
+
+							var ___err_2: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc({
+								var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+									try myResultFunc(12).get()
+								}).___to(&___err_1) else {
+									let err: Error = ___err_1!
+									print(err)
+									return .failure(err)
+								}
+								return .success(res)
+							}).get()
+							}).___to(&___err_2) else {
+								let err: Error = ___err_2!
+								print(err)
+								return .failure(err)
+							}
+
+							return .success(res)
+						})
+					}
+					""",
+				macros: testMacros,
+				indentationWidth: .tabs(0)
 			)
 		#else
 			print("Skipping testMacroDeep because ErrMacroMacros is not available.")

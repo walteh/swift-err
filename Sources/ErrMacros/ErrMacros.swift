@@ -4,244 +4,243 @@ import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxBuilder
 @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
+import SwiftSyntaxMacros
 
-private func generateGuardStatement(
-	condition: OptionalBindingConditionSyntax,
-	functionCall: String,
-	guardStmt: GuardStmtSyntax
-) -> String {
-	let statements: String = "\(guardStmt.body)"
-	let includeNSErr = statements.contains("nserr")
-	let includeErr = statements.contains("err") || includeNSErr
+class GuardStatementVisitor: SyntaxRewriter {
 
-	// Extract leading trivia as a string
-	let guardLeadingTrivia = String(
-		bytes: guardStmt.syntaxTextBytes.prefix(guardStmt.leadingTriviaLength.utf8Length),
-		encoding: .utf8
-	)!
-	var bodyLeadingTrivia = String(
-		bytes: guardStmt.body.statements.syntaxTextBytes.prefix(
-			guardStmt.body.statements.leadingTriviaLength.utf8Length
-		),
-		encoding: .utf8
-	)!
+	var traced: Bool = false
 
-	if bodyLeadingTrivia.hasPrefix(guardLeadingTrivia) {
-		bodyLeadingTrivia.trimPrefix(guardLeadingTrivia)
+	override func visit(_ node: GuardStmtSyntax) -> StmtSyntax {
+		// print("===== BEFORE =====")
+		// print(node)
+
+		// Transform the guard statement as needed
+		let visitedNode = super.visit(node)
+		guard let guardNode = visitedNode.as(GuardStmtSyntax.self) else {
+			return StmtSyntax(visitedNode)
+		}
+		let transformedGuardStmt = transformGuardStatement(guardNode)
+		let stmt = StmtSyntax(transformedGuardStmt)
+		// print("===== AFTER =====")
+		// print(stmt)
+		// print("===== END =====")
+		return stmt
 	}
 
-	// Build the adjusted statements with correct trivia
-	var states: [String] = []
-	for stmt in guardStmt.body.statements {
-		let stmtString = "\(stmt)".trimmingCharacters(in: .whitespacesAndNewlines)
-		states.append("\n\(bodyLeadingTrivia)\(stmtString)")
+	private var uniqueCounter = 0
+
+	private func getNextId() -> Int {
+		uniqueCounter += 1
+		return uniqueCounter
 	}
 
-	let statementsd =
-		"guard let \(condition.pattern)=\(functionCall) else {\n"
-		+ "\(includeErr ? "\(bodyLeadingTrivia)let err = ___err!\n" : "")"
-		+ "\(includeNSErr ? "\(bodyLeadingTrivia)let nserr = err as NSError\n" : "")"
-		+ "\(states.joined(separator: ""))"
-		+ "}"
-
-	return statementsd
-}
-
-func expandMacro(
-	in codeBlockItemList: CodeBlockItemListSyntax,
-	file _: String,
-	trace: Bool = false,
-	extras: Bool = true
-) -> CodeBlockItemListSyntax {
-	var newItems = [CodeBlockItemSyntax]()
-	if extras {
-		newItems.append("var ___err: Error? = nil\n")
-	}
-
-	let toStatement = trace ? "___to___traced" : "___to"
-
-	func processClosureExpr(_ closureExpr: ClosureExprSyntax) -> ClosureExprSyntax {
-		let processedStatements = expandMacro(
-			in: closureExpr.statements,
-			file: "\(closureExpr.statements)",
-			trace: trace,
-			extras: true
-		)
-		return closureExpr.with(\.statements, processedStatements)
-	}
-
-	for item in codeBlockItemList {
-		if let guardStmt = item.item.as(GuardStmtSyntax.self),
+	private func transformGuardStatement(_ guardStmt: GuardStmtSyntax) -> GuardStmtSyntax {
+		guard
 			let condition = guardStmt.conditions.first?.condition.as(
 				OptionalBindingConditionSyntax.self
-			)
-		{
-
-			if let tryExpr = condition.initializer?.value.as(TryExprSyntax.self) {
-				let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
-
-				var expr = tryExpr.expression
-
-				if let functionCall = tryExpr.expression.as(FunctionCallExprSyntax.self) {
-					var newArguments = [LabeledExprSyntax]()
-					for arg in functionCall.arguments {
-						if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
-							let processedClosure = processClosureExpr(closureExpr)
-							newArguments.append(
-								arg.with(\.expression, ExprSyntax(processedClosure))
-							)
-						} else {
-							newArguments.append(arg)
-						}
-					}
-					let newFunctionCall = functionCall.with(
-						\.arguments,
-						LabeledExprListSyntax(newArguments)
-					)
-
-					expr = ExprSyntax(newFunctionCall)
-				}
-
-				let full =
-					"\(useAwait ? "await " : "")Result.___err___create(\(trace ? "tracing" : "catching"): {\ntry \(expr)\n}).\(toStatement)(&___err)"
-
-				let expandedText = generateGuardStatement(
-					condition: condition,
-					functionCall: full,
-					guardStmt: guardStmt
-				)
-
-				let expandedItem = Parser.parse(source: expandedText).statements
-
-				newItems.append(contentsOf: expandedItem)
-
-				continue
-			} else if let functionCall = condition.initializer?.value.as(
-				FunctionCallExprSyntax.self
-			) {
-				var newArguments = [LabeledExprSyntax]()
-				for arg in functionCall.arguments {
-					if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
-						let processedClosure = processClosureExpr(closureExpr)
-						newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
-					} else {
-						newArguments.append(arg)
-					}
-				}
-				let newFunctionCall = functionCall.with(
-					\.arguments,
-					LabeledExprListSyntax(newArguments)
-				)
-				let functionCallTrimmed = "\(newFunctionCall)".trimmingCharacters(
-					in: .whitespacesAndNewlines
-				)
-
-				if functionCallTrimmed.hasSuffix(".get()") {
-					let expandedText = generateGuardStatement(
-						condition: condition,
-						functionCall: "\(functionCallTrimmed.dropLast(6)).\(toStatement)(&___err)",
-						guardStmt: guardStmt
-					)
-					let expandedItem = Parser.parse(source: expandedText).statements
-					newItems.append(contentsOf: expandedItem)
-					continue
-				}
-
-			} else if let aw = condition.initializer?.value.as(AwaitExprSyntax.self),
-				let functionCall = aw.expression.as(FunctionCallExprSyntax.self)
-			{
-				var newArguments = [LabeledExprSyntax]()
-				for arg in functionCall.arguments {
-					if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
-						let processedClosure = processClosureExpr(closureExpr)
-						newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
-					} else {
-						newArguments.append(arg)
-					}
-				}
-				let newFunctionCall = functionCall.with(
-					\.arguments,
-					LabeledExprListSyntax(newArguments)
-				)
-				let functionCallTrimmed = "\(newFunctionCall)".trimmingCharacters(
-					in: .whitespacesAndNewlines
-				)
-
-				if functionCallTrimmed.hasSuffix(".get()") {
-					let expandedText = generateGuardStatement(
-						condition: condition,
-						functionCall:
-							"await \(functionCallTrimmed.dropLast(6)).\(toStatement)(&___err)",
-						guardStmt: guardStmt
-					)
-					let expandedItem = Parser.parse(source: expandedText).statements
-					newItems.append(contentsOf: expandedItem)
-					continue
-				}
-			}
-			newItems.append(item)
-
-		} else if let returnStmt = item.item.as(ReturnStmtSyntax.self),
-			let functionCall = returnStmt.expression?.as(FunctionCallExprSyntax.self)
-		{
-			var newArguments = [LabeledExprSyntax]()
-			for arg in functionCall.arguments {
-				if let closureExpr = arg.expression.as(ClosureExprSyntax.self) {
-					let processedClosure = processClosureExpr(closureExpr)
-					newArguments.append(arg.with(\.expression, ExprSyntax(processedClosure)))
-				} else {
-					newArguments.append(arg)
-				}
-			}
-			let newFunctionCall = functionCall.with(
-				\.arguments,
-				LabeledExprListSyntax(newArguments)
-			)
-			let newReturnStmt = returnStmt.with(\.expression, ExprSyntax(newFunctionCall))
-			newItems.append(CodeBlockItemSyntax(item: .stmt(StmtSyntax(newReturnStmt))))
-		} else {
-			newItems.append(item)
+			),
+			let tryExpr = condition.initializer?.value.as(TryExprSyntax.self)
+		else {
+			return guardStmt  // No transformation if conditions don't match
 		}
+
+		let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
+		let expr = tryExpr.expression
+
+		// let hash: String.SubSequence = "\(guardStmt.id.indexInTree.toOpaque())z".trimmingPrefix("-")
+
+		let errString = "___err_\(getNextId())"
+			.replacingOccurrences(of: "/", with: "_")
+			.replacingOccurrences(of: ".", with: "_")
+
+		// Create the transformed expression using syntax nodes
+		let catchingClosure = ClosureExprSyntax.init(
+			leadingTrivia: nil,
+			// nil,
+			statements: [
+				.init(
+					leadingTrivia: guardStmt.leadingTrivia + .tabs(1),
+					item: .expr(
+						ExprSyntax(
+							TryExprSyntax(
+								tryKeyword: .keyword(.try),
+								expression: expr
+							)
+						)
+					)
+				)
+			],
+			rightBrace: .rightBraceToken(
+				leadingTrivia: guardStmt.leadingTrivia.indentation(isOnNewline: false)!
+			)
+		)
+
+		let createExpr = FunctionCallExprSyntax(
+			calledExpression: MemberAccessExprSyntax(
+				base: DeclReferenceExprSyntax(
+					baseName: .identifier("Result")
+
+				),
+
+				name: .identifier("___err___create")
+			),
+			leftParen: .leftParenToken(),
+			arguments: LabeledExprListSyntax([
+				LabeledExprSyntax(
+					label: "catching",
+					colon: .colonToken(),
+					expression: ExprSyntax(catchingClosure),
+					trailingComma: nil
+				)
+			]),
+			rightParen: .rightParenToken()
+		)
+
+		var toExpr: ExprSyntax = ExprSyntax(
+			FunctionCallExprSyntax(
+				calledExpression: MemberAccessExprSyntax(
+					base: createExpr,
+					name: .identifier(traced ? "___to_traced" : "___to")
+				),
+				leftParen: .leftParenToken(),
+				arguments: LabeledExprListSyntax([
+					LabeledExprSyntax(
+						expression: ExprSyntax(
+							InOutExprSyntax(
+								ampersand: .prefixAmpersandToken(),
+								expression: DeclReferenceExprSyntax(
+									baseName: .identifier(errString)
+								)
+							)
+						)
+					)
+				]),
+				rightParen: .rightParenToken()
+			)
+		)
+
+		if useAwait {
+			toExpr = ExprSyntax(
+				AwaitExprSyntax(
+					awaitKeyword: .keyword(.await),
+					expression: ExprSyntax(toExpr)
+				)
+			)
+		}
+
+		// Construct new initializer clause
+		let newInitializer = InitializerClauseSyntax(
+			equal: TokenSyntax.equalToken(),
+			value: toExpr
+		)
+
+		// Construct new optional binding condition
+		let newOptionalBinding = OptionalBindingConditionSyntax(
+			bindingSpecifier: TokenSyntax.keyword(.let),
+			pattern: condition.pattern,
+			initializer: newInitializer
+		)
+
+		// Construct the new condition element list with the updated conditionthe
+		let newConditionElement = ConditionElementSyntax(
+			condition: .init(newOptionalBinding),
+			trailingComma: nil
+		)
+
+		let newConditionList = ConditionElementListSyntax([newConditionElement])
+
+		// Step 1: Create the forced unwrap expression "___err!"
+		let forcedErrExpr = ForceUnwrapExprSyntax(
+			expression: ExprSyntax(
+				DeclReferenceExprSyntax(baseName: .identifier(errString), argumentNames: nil)
+			),
+			exclamationMark: .exclamationMarkToken()
+		)
+
+		// Step 2: Create the initializer clause " = ___err!"
+		let initializerClause = InitializerClauseSyntax(
+			equal: .equalToken(),
+			value: ExprSyntax(forcedErrExpr)
+		)
+
+		// Step 3: Define the type annotation ": Error"
+		let typeAnnotation = TypeAnnotationSyntax(
+			colon: .colonToken(),
+			type: IdentifierTypeSyntax(
+				name: .identifier("Error"),
+				genericArgumentClause: nil
+			)
+		)
+
+		// Step 4: Create the pattern binding with "let err = ___err!"
+		let patternBinding = PatternBindingSyntax(
+			pattern: IdentifierPatternSyntax(identifier: .identifier("err")),
+			typeAnnotation: typeAnnotation,
+			initializer: initializerClause
+		)
+
+		// Step 5: Create the variable declaration "let err = ___err!"
+		let letErrDeclaration = VariableDeclSyntax(
+			bindingSpecifier: TokenSyntax.keyword(.let),
+			bindings: PatternBindingListSyntax([patternBinding])
+		)
+
+		// Step 6: Wrap the variable declaration as a CodeBlockItemSyntax
+		let letErrStatement = CodeBlockItemSyntax(item: .init(letErrDeclaration))
+
+		// Step 7: Combine the new "let err = ___err!" statement with the original guard body statements
+		let newBodyStatements =
+			[letErrStatement]
+			+ guardStmt.body.statements.map { stmt in
+				return stmt
+			}
+
+		// Step 8: Create a new CodeBlockSyntax for the guard statement body
+		let newBody = CodeBlockSyntax(
+			leftBrace: guardStmt.body.leftBrace,
+			statements: CodeBlockItemListSyntax(
+				newBodyStatements.map { stmt in
+					return
+						stmt
+						.with(\.leadingTrivia, guardStmt.leadingTrivia + [.tabs(1)])
+				}
+			),
+			rightBrace: guardStmt.body.rightBrace
+		)
+
+		// The newBody can now be used in place of the original body in the guard statement
+		let s = "\(guardStmt.guardKeyword)".replacingOccurrences(
+			of: "guard",
+			with: "var \(errString): Error? = nil; guard"
+		)
+		// Rebuild the guard statement with transformed condition and modified body
+		return
+			guardStmt
+			.with(
+				\.guardKeyword,
+				"\(raw: s)"
+			)
+			.with(\.conditions, newConditionList)
+			.with(\.body, newBody)
+
 	}
-
-	return CodeBlockItemListSyntax(newItems)
 }
-
-// func generateGuardStatement(
-// 	condition: OptionalBindingConditionSyntax,
-// 	functionCall: String,
-// 	guardStmt: GuardStmtSyntax
-// ) -> String {
-// 	let pattern = condition.pattern.description
-// 	let body = guardStmt.body.description.trimmingCharacters(in: .whitespacesAndNewlines)
-// 	return """
-// 		guard let \(pattern) = \(functionCall) else {
-// 		    let err = ___err!
-// 		    \(body)
-// 		}
-// 		"""
-// }
 
 @_spi(ExperimentalLanguageFeature)
 public struct Err: BodyMacro {
 	public static func expansion(
-		of _: AttributeSyntax,
+		of syn: AttributeSyntax,
 		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
-		in _: some MacroExpansionContext
+		in ind: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
-		if let selfdecl = declaration as? FunctionDeclSyntax {
-			if let body = selfdecl.body {
-				return expandMacro(in: body.statements, file: "\(body)") + []
-			}
-		} else if let selfdecl = declaration as? InitializerDeclSyntax {
-			if let body = selfdecl.body {
-				return expandMacro(in: body.statements, file: "\(body)") + []
-			}
-		} else if let selfdecl = declaration as? ClosureExprSyntax {
-			return expandMacro(in: selfdecl.statements, file: "\(selfdecl.statements)") + []
+		guard let body = declaration.body else { return [] }
 
-		}
-		return []
+		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
+
+		let result: CodeBlockSyntax = visitor.visit(body)
+
+		// add an indentation to the result
+		return [] + result.statements + []
 	}
 }
 
@@ -253,20 +252,14 @@ public struct ErrTraced: BodyMacro {
 
 		in _: some MacroExpansionContext
 	) throws -> [CodeBlockItemSyntax] {
-		if let selfdecl = declaration as? FunctionDeclSyntax {
-			if let body = selfdecl.body {
-				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
-			}
-		} else if let selfdecl = declaration as? InitializerDeclSyntax {
-			if let body = selfdecl.body {
-				return expandMacro(in: body.statements, file: "\(body)", trace: true) + []
-			}
-		} else if let selfdecl = declaration as? ClosureExprSyntax {
-			return expandMacro(in: selfdecl.statements, file: "\(selfdecl.statements)", trace: true)
-				+ []
+		guard let body = declaration.body else { return [] }
 
-		}
-		return []
+		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
+		visitor.traced = true
+		let result: CodeBlockSyntax = visitor.visit(body)
+
+		// add an indentation to the result
+		return [] + result.statements + []
 	}
 }
 

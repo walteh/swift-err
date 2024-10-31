@@ -23,57 +23,76 @@ func myFunctionFunc(_ arg: () throws -> UInt32) throws -> Result<UInt32, Error> 
 	return .success(try arg())
 }
 
-class World {
-	@err init() throws {
-		guard let res = try myThrowingFunc(12) else {
-			throw err
-		}
-		print(res)
-	}
-}
+// class World {
+// 	@err init() throws {
+// 		guard let res = try myThrowingFunc(12) else {
+// 			throw err
+// 		}
+// 		print(res)
+// 	}
+// }
 
-@err
-func checker() async -> Result<String, Error> {
-	guard let res2 = try myThrowingFunc(12) else {
-		return .failure(err)
-	}
+// @err
+// func abc() async throws -> Result<String, Error> {
+// 	guard let res = try myThrowingFunc(12) else {
+// 		return .failure(err)
+// 	}
+// 	return .success("\(res)")
+// }
 
-	guard let res3 = try myResultFunc(12).get() else {
-		return .failure(err)
-	}
+// func def() async throws -> Result<String, Error> {
+// 	var ___res: UInt32
+// 	do {
+// 		___res = try await myThrowingAsyncFunc(12)
+// 	} catch {
+// 		return .failure(error)
+// 	}
+// 	let res = ___res
+// 	return .success("\(res)")
+// }
 
-	guard let res4 = try myThrowingFunc(12) else {
-		return .failure(err)
-	}
+// @err
+// func checker() async -> Result<String, Error> {
+// 	guard let res2 = try myThrowingFunc(12) else {
+// 		return .failure(err)
+// 	}
 
-	guard let res5 = try await myThrowingAsyncFunc(12) else {
-		return .failure(err)
-	}
+// 	guard let res3 = try myResultFunc(12).get() else {
+// 		return .failure(err)
+// 	}
 
-	guard let res6 = await myResultAsyncFunc(12).get() else {
-		return .failure(err)
-	}
+// 	guard let res4 = try myThrowingFunc(12) else {
+// 		return .failure(err)
+// 	}
 
-	guard
-		let res7 = try myFunctionFunc({
-			guard let res = myResultFunc(12).get() else {
-				throw Hello()
-			}
+// 	guard let res5 = try await myThrowingAsyncFunc(12) else {
+// 		return .failure(err)
+// 	}
 
-			return res
-		})
-	else {
-		return .failure(err)
-	}
+// 	guard let res6 = try await trymyResultAsyncFunc(12).get() else {
+// 		return .failure(err)
+// 	}
 
-	return .success("\(res2) \(res3) \(res4) \(res5) \(res6) \(res7)")
-}
+// 	guard
+// 		let res7 = try myFunctionFunc({
+// 			guard let res = try myResultFunc(12).get() else {
+// 				throw Hello()
+// 			}
 
-@err
-func example() async -> Result<String, Error> {
-	guard let res2 = try await myThrowingAsyncFunc(12) else {
-		return .failure(err)
-	}
+// 			return res
+// 		})
+// 	else {
+// 		return .failure(err)
+// 	}
 
-	return .success("\(res2)")
-}
+// 	return .success("\(res2) \(res3) \(res4) \(res5) \(res6) \(res7)")
+// }
+
+// @err
+// func example() async -> Result<String, Error> {
+// 	guard let res2 = try await myThrowingAsyncFunc(12) else {
+// 		return .failure(err)
+// 	}
+
+// 	return .success("\(res2)")
+// }

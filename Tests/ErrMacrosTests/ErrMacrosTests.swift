@@ -154,7 +154,7 @@ final class ErrMacrosTests: XCTestCase {
 				"""
 				@err func hi() -> Result<String, Error> {
 					return myResultFunc({
-						guard let res = myResultFunc(12).get() else {
+						guard let res = try myResultFunc(12).get() else {
 							print(err)
 							return .failure(err)
 						}
@@ -165,18 +165,16 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-						var ___err: Error? = nil
-						return myResultFunc({
-								var ___err: Error? = nil
-								guard let res = myResultFunc(12).___to(&___err) else {
-									let err = ___err!
+							return myResultFunc({
+											var ___err: Error? = nil
 
-									print(err)
-									return .failure(err)
-								}
+											guard  let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
+																	print(err)
+																	return .failure(err)
+															}
 
-										return .success(res)
-							})
+															return .success(res)
+									})
 					}
 					""",
 				macros: testMacros,

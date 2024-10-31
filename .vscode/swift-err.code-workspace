@@ -7,6 +7,14 @@
 			"path": "../ErrMacro",
 		}
 	],
+	"extensions": {
+		"recommendations": [
+			"sswg.swift-lang",
+			"editorconfig.editorconfig",
+			"pkief.material-icon-theme",
+			"mhutchie.git-graph",
+		]
+	},
 	"settings": {
 		"swift.sourcekit-lsp.disable": false,
 		"swiftformat.enable": true,

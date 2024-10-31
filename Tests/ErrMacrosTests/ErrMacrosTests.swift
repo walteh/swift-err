@@ -152,7 +152,8 @@ final class ErrMacrosTests: XCTestCase {
 		#if canImport(ErrMacros)
 			assertMacroExpansion(
 				"""
-				@err func hi() -> Result<String, Error> {
+				@err
+				func hi() -> Result<String, Error> {
 					return myResultFunc({
 						guard let res = try myResultFunc(12).get() else {
 							print(err)
@@ -165,20 +166,71 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
-							return myResultFunc({
-											var ___err: Error? = nil
+					return myResultFunc({
 
-											guard  let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
-																	print(err)
-																	return .failure(err)
-															}
+							var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
+								let err: Error = ___err!
+								print(err)
+								return .failure(err)
+							}
 
-															return .success(res)
-									})
+							return .success(res)
+						})
 					}
 					""",
 				macros: testMacros,
-				indentationWidth: .tab
+				indentationWidth: .tabs(0)
+			)
+		#else
+			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
+
+	func testMacroDeepWithResultAndLargeBodyNestedFunc() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err
+				func hi() -> Result<String, Error> {
+					return myResultFunc({
+						guard let res = try myResultFunc({
+							guard let res = try myResultFunc(12).get() else {
+								print(err)
+								return .failure(err)
+							}
+							return .success(res)
+						}).get() else {
+							print(err)
+							return .failure(err)
+						}
+
+						return .success(res)
+					})
+				}
+				""",
+				expandedSource: """
+					func hi() -> Result<String, Error> {
+					return myResultFunc({
+
+							var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc({
+								var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
+									let err: Error = ___err!
+									print(err)
+									return .failure(err)
+								}
+								return .success(res)
+							}).___to(&___err) else {
+								let err: Error = ___err!
+								print(err)
+								return .failure(err)
+							}
+
+							return .success(res)
+						})
+					}
+					""",
+				macros: testMacros,
+				indentationWidth: .tabs(0)
 			)
 		#else
 			print("Skipping testMacroDeep because ErrMacroMacros is not available.")

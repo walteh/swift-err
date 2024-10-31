@@ -168,8 +168,10 @@ final class ErrMacrosTests: XCTestCase {
 					func hi() -> Result<String, Error> {
 					return myResultFunc({
 
-							var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
-								let err: Error = ___err!
+							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc(12).get()
+							}).___to(&___err_1) else {
+								let err: Error = ___err_1!
 								print(err)
 								return .failure(err)
 							}
@@ -212,15 +214,19 @@ final class ErrMacrosTests: XCTestCase {
 					func hi() -> Result<String, Error> {
 					return myResultFunc({
 
-							var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc({
-								var ___err: Error? = nil; guard let res = Result.___err___create(catching: { try myResultFunc(12).get()  }).___to(&___err) else {
-									let err: Error = ___err!
+							var ___err_2: Error? = nil; guard  let res = Result.___err___create(catching: {
+								try myResultFunc({
+								var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
+									try myResultFunc(12).get()
+								}).___to(&___err_1) else {
+									let err: Error = ___err_1!
 									print(err)
 									return .failure(err)
 								}
 								return .success(res)
-							}).___to(&___err) else {
-								let err: Error = ___err!
+							}).get()
+							}).___to(&___err_2) else {
+								let err: Error = ___err_2!
 								print(err)
 								return .failure(err)
 							}

@@ -8,8 +8,8 @@ import SwiftSyntaxMacros
 
 class GuardStatementVisitor: SyntaxRewriter {
 	override func visit(_ node: GuardStmtSyntax) -> StmtSyntax {
-		print("===== BEFORE =====")
-		print(node)
+		// print("===== BEFORE =====")
+		// print(node)
 
 		// Transform the guard statement as needed
 		let visitedNode = super.visit(node)
@@ -18,10 +18,17 @@ class GuardStatementVisitor: SyntaxRewriter {
 		}
 		let transformedGuardStmt = transformGuardStatement(guardNode)
 		let stmt = StmtSyntax(transformedGuardStmt)
-		print("===== AFTER =====")
-		print(stmt)
-		print("===== END =====")
+		// print("===== AFTER =====")
+		// print(stmt)
+		// print("===== END =====")
 		return stmt
+	}
+
+	private var uniqueCounter = 0
+
+	private func getNextId() -> Int {
+		uniqueCounter += 1
+		return uniqueCounter
 	}
 
 	private func transformGuardStatement(_ guardStmt: GuardStmtSyntax) -> GuardStmtSyntax {
@@ -36,6 +43,12 @@ class GuardStatementVisitor: SyntaxRewriter {
 
 		let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
 		let expr = tryExpr.expression
+
+		// let hash: String.SubSequence = "\(guardStmt.id.indexInTree.toOpaque())z".trimmingPrefix("-")
+
+		let errString = "___err_\(getNextId())"
+			.replacingOccurrences(of: "/", with: "_")
+			.replacingOccurrences(of: ".", with: "_")
 
 		// Create the transformed expression using syntax nodes
 		let catchingClosure = ClosureExprSyntax.init(
@@ -52,15 +65,20 @@ class GuardStatementVisitor: SyntaxRewriter {
 							)
 						)
 					)
-//					trailingTrivia: guardStmt
 				)
 			],
-			rightBrace: .rightBraceToken(leadingTrivia: guardStmt.leadingTrivia.indentation(isOnNewline: false)!)
+			rightBrace: .rightBraceToken(
+				leadingTrivia: guardStmt.leadingTrivia.indentation(isOnNewline: false)!
+			)
 		)
 
 		let createExpr = FunctionCallExprSyntax(
 			calledExpression: MemberAccessExprSyntax(
-				base: DeclReferenceExprSyntax(baseName: .identifier("Result")),
+				base: DeclReferenceExprSyntax(
+					baseName: .identifier("Result")
+
+				),
+
 				name: .identifier("___err___create")
 			),
 			leftParen: .leftParenToken(),
@@ -75,29 +93,42 @@ class GuardStatementVisitor: SyntaxRewriter {
 			rightParen: .rightParenToken()
 		)
 
-		let toExpr = FunctionCallExprSyntax(
-			calledExpression: MemberAccessExprSyntax(
-				base: createExpr,
-				name: .identifier("___to")
-			),
-			leftParen: .leftParenToken(),
-			arguments: LabeledExprListSyntax([
-				LabeledExprSyntax(
-					expression: ExprSyntax(
-						InOutExprSyntax(
-							ampersand: .prefixAmpersandToken(),
-							expression: DeclReferenceExprSyntax(baseName: .identifier("___err"))
+		var toExpr: ExprSyntax = ExprSyntax(
+			FunctionCallExprSyntax(
+				calledExpression: MemberAccessExprSyntax(
+					base: createExpr,
+					name: .identifier("___to")
+				),
+				leftParen: .leftParenToken(),
+				arguments: LabeledExprListSyntax([
+					LabeledExprSyntax(
+						expression: ExprSyntax(
+							InOutExprSyntax(
+								ampersand: .prefixAmpersandToken(),
+								expression: DeclReferenceExprSyntax(
+									baseName: .identifier(errString)
+								)
+							)
 						)
 					)
-				)
-			]),
-			rightParen: .rightParenToken()
+				]),
+				rightParen: .rightParenToken()
+			)
 		)
+
+		if useAwait {
+			toExpr = ExprSyntax(
+				AwaitExprSyntax(
+					awaitKeyword: .keyword(.await),
+					expression: ExprSyntax(toExpr)
+				)
+			)
+		}
 
 		// Construct new initializer clause
 		let newInitializer = InitializerClauseSyntax(
 			equal: TokenSyntax.equalToken(),
-			value: ExprSyntax(toExpr)
+			value: toExpr
 		)
 
 		// Construct new optional binding condition
@@ -118,7 +149,7 @@ class GuardStatementVisitor: SyntaxRewriter {
 		// Step 1: Create the forced unwrap expression "___err!"
 		let forcedErrExpr = ForceUnwrapExprSyntax(
 			expression: ExprSyntax(
-				DeclReferenceExprSyntax(baseName: .identifier("___err"), argumentNames: nil)
+				DeclReferenceExprSyntax(baseName: .identifier(errString), argumentNames: nil)
 			),
 			exclamationMark: .exclamationMarkToken()
 		)
@@ -166,8 +197,9 @@ class GuardStatementVisitor: SyntaxRewriter {
 			leftBrace: guardStmt.body.leftBrace,
 			statements: CodeBlockItemListSyntax(
 				newBodyStatements.map { stmt in
-					return stmt
-					 .with(\.leadingTrivia, guardStmt.leadingTrivia + [.tabs(1)])
+					return
+						stmt
+						.with(\.leadingTrivia, guardStmt.leadingTrivia + [.tabs(1)])
 				}
 			),
 			rightBrace: guardStmt.body.rightBrace
@@ -176,7 +208,7 @@ class GuardStatementVisitor: SyntaxRewriter {
 		// The newBody can now be used in place of the original body in the guard statement
 		let s = "\(guardStmt.guardKeyword)".replacingOccurrences(
 			of: "guard",
-			with: "var ___err: Error? = nil; guard"
+			with: "var \(errString): Error? = nil; guard"
 		)
 		// Rebuild the guard statement with transformed condition and modified body
 		return

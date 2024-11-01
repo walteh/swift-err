@@ -10,6 +10,8 @@ import XCTest
 	let testMacros: [String: Macro.Type] = [
 		"err": Err.self,
 		"err_traced": ErrTraced.self,
+		"errdo": DoErr.self,
+		"errdo_traced": DoErrTraced.self,
 	]
 #endif
 
@@ -22,6 +24,7 @@ import XCTest
 // }
 
 final class ErrMacrosTests: XCTestCase {
+
 	func testMacroDeep() throws {
 		#if canImport(ErrMacros)
 			assertMacroExpansion(
@@ -58,7 +61,8 @@ final class ErrMacrosTests: XCTestCase {
 			assertMacroExpansion(
 				"""
 				@err func hi() -> Result<String, Error> {
-					guard let res = await myResultFunc(12).get() else {
+					let hello = 12
+					guard let res = await myResultFunc(hello).get() [hello] else {
 						return .failure(err)
 					}
 					return .success(res)
@@ -66,9 +70,10 @@ final class ErrMacrosTests: XCTestCase {
 				""",
 				expandedSource: """
 					func hi() -> Result<String, Error> {
+						let hello = 12
 
-							var ___err_1: Error? = nil; guard  let res = await Result.___err___create(catching: {
-								try await myResultFunc(12).get()
+							var ___err_1: Error? = nil; guard  let res = await Result.___err___create___sendable(catching: { [hello] in
+								try await myResultFunc(hello).get()
 							}).___to(&___err_1) else {
 								let err: Error = ___err_1!
 								return .failure(err)

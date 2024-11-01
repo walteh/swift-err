@@ -21,7 +21,21 @@ func myInoutFunc(_ arg: inout UInt32) -> Result<UInt32, Error> {
 	return .success(arg)
 }
 
-struct Hello: Error {}
+struct Hello: Sendable, Error {
+
+	func myInoutFunc(_ arg: inout UInt32) -> Result<UInt32, Error> {
+		return .success(arg)
+	}
+
+	// func hi() -> Result<String, Error> {
+	// 	var err: Error? = nil
+	// 	guard let x = (try? myInoutFunc(), &err).0 else {
+	// 		let err = err!
+	// 		// original else block
+	// 	}
+	// }
+
+}
 
 func myFunctionFunc(_ arg: () throws -> UInt32) throws -> Result<UInt32, Error> {
 	return .success(try arg())
@@ -46,15 +60,13 @@ func abc() async throws -> Result<String, Error> {
 	return .success("\(res)")
 }
 
-// end
 // func def() async throws -> Result<String, Error> {
-// 	var res: UInt32; var err: Error?; do {
+// 	let res;
+// 	do {
 // 		res = try await myThrowingAsyncFunc(12)
 // 	} catch {
-// 		err = error
-// 	}; guard let res = Result() {
-// 		return .failure(err)
-// 	}
+// 		return .failure(error)
+// 	};
 // 	return .success("\(res)")
 // }
 

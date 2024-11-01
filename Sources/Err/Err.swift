@@ -7,6 +7,12 @@ public macro err() = #externalMacro(module: "ErrMacros", type: "Err")
 @attached(body)
 public macro err_traced() = #externalMacro(module: "ErrMacros", type: "ErrTraced")
 
+@attached(body)
+public macro errdo() = #externalMacro(module: "ErrMacros", type: "DoErr")
+
+@attached(body)
+public macro errdo_traced() = #externalMacro(module: "ErrMacros", type: "DoErrTraced")
+
 public struct TraceableError: Error {
 	public let line: UInt
 	public let file: String
@@ -43,6 +49,7 @@ public extension Result {
 }
 
 public extension Result where Failure == Error, Success: ~Copyable {
+
 	static func ___err___create(
 		catching body: () throws -> Success
 	) -> Result<Success, Failure> {
@@ -61,9 +68,21 @@ public extension Result where Failure == Error, Success: ~Copyable {
 			return .failure(error)
 		}
 	}
+
+	static func ___err___create___sendable(
+		catching body: @Sendable @escaping () async throws -> Success
+	) async -> Result<Success, Failure> {
+		do {
+			let result = try await body()
+			return .success(result)
+		} catch {
+			return .failure(error)
+		}
+	}
 }
 
-public extension Result where Failure == Error {
+public extension Result where Failure == Error, Success: ~Copyable {
+
 	static func ___err___create(
 		tracing body: () throws -> Success,
 		__file: String = #fileID,

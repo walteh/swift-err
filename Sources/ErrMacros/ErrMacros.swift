@@ -43,42 +43,116 @@ class GuardStatementVisitor: SyntaxRewriter {
 			return guardStmt  // No transformation if conditions don't match
 		}
 
+		var closureCaptureItems: [ClosureCaptureSyntax] = []
 		var maybeTryExpr: TryExprSyntax? = nil
+		var checkName = "___err___create"
 		// if have no try, but have .get() then it's a Result and add a try
 		if let fexpt = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
-			if let memberAccessExpr = fexpt.calledExpression.as(MemberAccessExprSyntax.self),
-				memberAccessExpr.declName.baseName.text == "get"
-			{
-				maybeTryExpr = TryExprSyntax(
-					tryKeyword: .keyword(.try),
-					expression: ExprSyntax(fexpt)
-				)
+			if let memberAccessExpr = fexpt.calledExpression.as(MemberAccessExprSyntax.self) {
+				if memberAccessExpr.declName.baseName.text == "get" {
+					maybeTryExpr = TryExprSyntax(
+						tryKeyword: .keyword(.try),
+						expression: ExprSyntax(fexpt)
+					)
+				}
 
 			}
 		} else if let tryExprd = condition.initializer?.value.as(TryExprSyntax.self) {
-			maybeTryExpr = tryExprd
+			if let awaitExpr = tryExprd.expression.as(AwaitExprSyntax.self) {
+				if let declRefExpr = awaitExpr.expression.as(SubscriptCallExprSyntax.self) {
+					maybeTryExpr = TryExprSyntax(
+						tryKeyword: .keyword(.try),
+						expression: ExprSyntax(
+							AwaitExprSyntax(
+								awaitKeyword: .keyword(.await),
+								expression: ExprSyntax(declRefExpr.calledExpression)
+							)
+						)
+					)
+					for arg in declRefExpr.arguments {
+						if let arg = arg.expression.as(DeclReferenceExprSyntax.self) {
+							closureCaptureItems.append(
+								ClosureCaptureSyntax(
+									expression: arg
+								)
+							)
+						}
+					}
+				} else {
+					maybeTryExpr = TryExprSyntax(
+						tryKeyword: .keyword(.try),
+						expression: ExprSyntax(awaitExpr)
+					)
+				}
+
+			} else {
+				maybeTryExpr = tryExprd
+			}
 		} else if let awaitExpr = condition.initializer?.value.as(AwaitExprSyntax.self) {
-			maybeTryExpr = TryExprSyntax(
-				tryKeyword: .keyword(.try),
-				expression: ExprSyntax(awaitExpr)
-			)
+			if let declRefExpr = awaitExpr.expression.as(SubscriptCallExprSyntax.self) {
+				maybeTryExpr = TryExprSyntax(
+					tryKeyword: .keyword(.try),
+					expression: ExprSyntax(
+						AwaitExprSyntax(
+							awaitKeyword: .keyword(.await),
+							expression: ExprSyntax(declRefExpr.calledExpression)
+						)
+					)
+				)
+				for arg in declRefExpr.arguments {
+					if let arg = arg.expression.as(DeclReferenceExprSyntax.self) {
+						closureCaptureItems.append(
+							ClosureCaptureSyntax(
+								expression: arg
+							)
+						)
+					}
+				}
+			} else {
+				maybeTryExpr = TryExprSyntax(
+					tryKeyword: .keyword(.try),
+					expression: ExprSyntax(awaitExpr)
+				)
+			}
+
 		}
 
 		guard let tryExpr = maybeTryExpr else {
 			return guardStmt
 		}
 
-		let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
+		let useAwait =
+			tryExpr.expression.as(AwaitExprSyntax.self) != nil
 		let expr = tryExpr.expression
+
+		if useAwait {
+			checkName = "___err___create___sendable"
+		}
+
+		// print(guardStmt.debugDescription)
 
 		let errString = "___err_\(getNextId())"
 			.replacingOccurrences(of: "/", with: "_")
 			.replacingOccurrences(of: ".", with: "_")
 
-		// Create the transformed expression using syntax nodes
-		let catchingClosure = ClosureExprSyntax.init(
+		// Create the closure with a proper signature to capture variables
+		let catchingClosure = ClosureExprSyntax(
 			leadingTrivia: nil,
-			// nil,
+			signature: closureCaptureItems.count > 0
+				? ClosureSignatureSyntax(
+					attributes: [],
+					capture: ClosureCaptureClauseSyntax(
+						leftSquare: .leftSquareToken(),
+						items: ClosureCaptureListSyntax(
+							closureCaptureItems
+						),
+						rightSquare: .rightSquareToken()
+					),
+					parameterClause: nil,
+					effectSpecifiers: nil,
+					returnClause: nil,
+					inKeyword: .keyword(.in)
+				) : nil,
 			statements: [
 				.init(
 					leadingTrivia: guardStmt.leadingTrivia + .tabs(1),
@@ -104,7 +178,7 @@ class GuardStatementVisitor: SyntaxRewriter {
 
 				),
 
-				name: .identifier("___err___create")
+				name: .identifier(checkName)
 			),
 			leftParen: .leftParenToken(),
 			arguments: LabeledExprListSyntax([
@@ -283,12 +357,4 @@ public struct ErrTraced: BodyMacro {
 		// add an indentation to the result
 		return [] + result.statements + []
 	}
-}
-
-@main
-struct ErrMacroPlugin: CompilerPlugin {
-	let providingMacros: [Macro.Type] = [
-		Err.self,
-		ErrTraced.self,
-	]
 }

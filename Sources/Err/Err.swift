@@ -42,9 +42,9 @@ public extension Result {
 	}
 }
 
-public extension Result where Failure == Error {
+public extension Result where Failure == Error, Success: ~Copyable {
 	static func ___err___create(
-		catching body: borrowing @escaping @Sendable () throws -> Success
+		catching body: () throws -> Success
 	) -> Result<Success, Failure> {
 		return Result { try body() }.mapError { err in
 			return err
@@ -52,7 +52,7 @@ public extension Result where Failure == Error {
 	}
 
 	static func ___err___create(
-		catching body: borrowing @escaping @Sendable () async throws -> Success
+		catching body: () async throws -> Success
 	) async -> Result<Success, Failure> {
 		do {
 			let result = try await body()
@@ -65,7 +65,7 @@ public extension Result where Failure == Error {
 
 public extension Result where Failure == Error {
 	static func ___err___create(
-		tracing body: borrowing @escaping @Sendable () throws -> Success,
+		tracing body: () throws -> Success,
 		__file: String = #fileID,
 		__function: String = #function,
 		__line: UInt = #line
@@ -76,7 +76,7 @@ public extension Result where Failure == Error {
 	}
 
 	static func ___err___create(
-		tracing body: borrowing @escaping @Sendable () async throws -> Success,
+		tracing body: () async throws -> Success,
 		__file: String = #fileID,
 		__function: String = #function,
 		__line: UInt = #line

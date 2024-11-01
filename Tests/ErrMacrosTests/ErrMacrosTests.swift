@@ -138,7 +138,7 @@ final class ErrMacrosTests: XCTestCase {
 
 							var ___err_1: Error? = nil; guard  let res = Result.___err___create(catching: {
 								try myResultFunc(12).get()
-							}).___to_traced(&___err_1) else {
+							}).___to___traced(&___err_1) else {
 								let err: Error = ___err_1!
 								print(err)
 								return .failure(err)

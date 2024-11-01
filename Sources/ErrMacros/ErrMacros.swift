@@ -196,7 +196,7 @@ class GuardStatementVisitor: SyntaxRewriter {
 			FunctionCallExprSyntax(
 				calledExpression: MemberAccessExprSyntax(
 					base: createExpr,
-					name: .identifier(traced ? "___to_traced" : "___to")
+					name: .identifier(traced ? "___to___traced" : "___to")
 				),
 				leftParen: .leftParenToken(),
 				arguments: LabeledExprListSyntax([

@@ -38,16 +38,38 @@ class GuardStatementVisitor: SyntaxRewriter {
 		guard
 			let condition = guardStmt.conditions.first?.condition.as(
 				OptionalBindingConditionSyntax.self
-			),
-			let tryExpr = condition.initializer?.value.as(TryExprSyntax.self)
+			)
 		else {
 			return guardStmt  // No transformation if conditions don't match
 		}
 
+		var maybeTryExpr: TryExprSyntax? = nil
+		// if have no try, but have .get() then it's a Result and add a try
+		if let fexpt = condition.initializer?.value.as(FunctionCallExprSyntax.self) {
+			if let memberAccessExpr = fexpt.calledExpression.as(MemberAccessExprSyntax.self),
+				memberAccessExpr.declName.baseName.text == "get"
+			{
+				maybeTryExpr = TryExprSyntax(
+					tryKeyword: .keyword(.try),
+					expression: ExprSyntax(fexpt)
+				)
+
+			}
+		} else if let tryExprd = condition.initializer?.value.as(TryExprSyntax.self) {
+			maybeTryExpr = tryExprd
+		} else if let awaitExpr = condition.initializer?.value.as(AwaitExprSyntax.self) {
+			maybeTryExpr = TryExprSyntax(
+				tryKeyword: .keyword(.try),
+				expression: ExprSyntax(awaitExpr)
+			)
+		}
+
+		guard let tryExpr = maybeTryExpr else {
+			return guardStmt
+		}
+
 		let useAwait = tryExpr.expression.as(AwaitExprSyntax.self) != nil
 		let expr = tryExpr.expression
-
-		// let hash: String.SubSequence = "\(guardStmt.id.indexInTree.toOpaque())z".trimmingPrefix("-")
 
 		let errString = "___err_\(getNextId())"
 			.replacingOccurrences(of: "/", with: "_")

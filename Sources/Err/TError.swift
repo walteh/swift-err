@@ -77,6 +77,12 @@ public final class TError: NSError, @unchecked Sendable {
 		return self.info(NSLocalizedRecoverySuggestionErrorKey, recoverySuggestion)
 	}
 
+	public func event(_ manip: (LogEvent) -> LogEvent) -> Self {
+		var event = LogEvent(.error)
+		event = manip(event)
+		return self.info(event.metadata)
+	}
+
 	public func info(_ data: [String: Any]) -> Self {
 		for i in data {
 			if let r = i.value as? (String) {

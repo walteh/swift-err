@@ -24,6 +24,7 @@ let package = Package(
 		.package(url: "https://github.com/swiftlang/swift-testing.git", branch: "main"),
 		.package(url: "https://github.com/swiftlang/swift-format.git", from: "600.0.0-latest"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.6.1"),
+		.package(url: "https://github.com/apple/swift-service-context.git", from: "1.1.0"),
 	],
 
 	targets: [
@@ -41,6 +42,7 @@ let package = Package(
 			dependencies: [
 				"ErrMacros",
 				.product(name: "Logging", package: "swift-log"),
+				.product(name: "ServiceContextModule", package: "swift-service-context"),
 			]
 		),
 

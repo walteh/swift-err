@@ -1,5 +1,5 @@
 {
-  "originHash" : "93ec804b268cd46e7e01e2be5cd24ab168d1dacbe8d6042a31215301f3b6420b",
+  "originHash" : "fd4fc078ac767ca2292cc1b0da859ba74b31da6a8aad5dab894c12a839617dd7",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -44,6 +44,15 @@
       "state" : {
         "revision" : "8f79cb175981458a0a27e76cb42fee8e17b1a993",
         "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "swift-service-context",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-service-context.git",
+      "state" : {
+        "revision" : "0c62c5b4601d6c125050b5c3a97f20cce881d32b",
+        "version" : "1.1.0"
       }
     },
     {

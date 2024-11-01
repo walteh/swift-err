@@ -10,8 +10,7 @@ import XCTest
 	let testMacros: [String: Macro.Type] = [
 		"err": Err.self,
 		"err_traced": ErrTraced.self,
-		"errdo": DoErr.self,
-		"errdo_traced": DoErrTraced.self,
+
 	]
 #endif
 

@@ -97,7 +97,9 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard let res6 = try await myResultAsyncFunc(12).get() else {
+	guard
+		let res6 = try await myResultAsyncFunc(12).get()
+	else {
 		return .failure(err)
 	}
 

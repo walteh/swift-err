@@ -241,54 +241,112 @@ class GuardVisitor: SyntaxRewriter {
 
 		let newConditionList = ConditionElementListSyntax([newConditionElement])
 
-		// Step 1: Create the forced unwrap expression "___err!"
-		let forcedErrExpr = ForceUnwrapExprSyntax(
-			expression: ExprSyntax(
-				DeclReferenceExprSyntax(baseName: .identifier(errString), argumentNames: nil)
-			),
-			exclamationMark: .exclamationMarkToken()
-		)
+		let letErrStatement = CodeBlockItemSyntax(
+			item: .init(
+				VariableDeclSyntax(
+					bindingSpecifier: TokenSyntax.keyword(.let),
+					bindings: PatternBindingListSyntax([
+						PatternBindingSyntax(
+							pattern: IdentifierPatternSyntax(identifier: .identifier("err")),
 
-		// Step 2: Create the initializer clause " = ___err!"
-		let initializerClause = InitializerClauseSyntax(
-			equal: .equalToken(),
-			value: ExprSyntax(forcedErrExpr)
-		)
-
-		// Step 3: Define the type annotation ": Error"
-		let typeAnnotation = TypeAnnotationSyntax(
-			colon: .colonToken(),
-			type: IdentifierTypeSyntax(
-				name: .identifier("Error"),
-				genericArgumentClause: nil
+							initializer: InitializerClauseSyntax(
+								equal: .equalToken(),
+								value: ExprSyntax(
+									ForceUnwrapExprSyntax(
+										expression: ExprSyntax(
+											DeclReferenceExprSyntax(
+												baseName: .identifier(errString),
+												argumentNames: nil
+											)
+										),
+										exclamationMark: .exclamationMarkToken()
+									)
+								)
+							)
+						)
+					])
+				)
 			)
 		)
-
-		// Step 4: Create the pattern binding with "let err = ___err!"
-		let patternBinding = PatternBindingSyntax(
-			pattern: IdentifierPatternSyntax(identifier: .identifier("err")),
-			typeAnnotation: typeAnnotation,
-			initializer: initializerClause
+		let letNSErrStatement = CodeBlockItemSyntax(
+			item: .init(
+				VariableDeclSyntax(
+					bindingSpecifier: TokenSyntax.keyword(.let),
+					bindings: PatternBindingListSyntax([
+						PatternBindingSyntax(
+							pattern: IdentifierPatternSyntax(identifier: .identifier("nserr")),
+							initializer: InitializerClauseSyntax(
+								equal: .equalToken(),
+								value: ExprSyntax(
+									AsExprSyntax(
+										expression: DeclReferenceExprSyntax(
+											baseName: .identifier("err")
+										),
+										asKeyword: .keyword(.as),
+										questionOrExclamationMark: .exclamationMarkToken(),
+										type: IdentifierTypeSyntax(
+											name: .identifier("NSError")
+										)
+									)
+								)
+							)
+						)
+					])
+				)
+			)
 		)
-
-		// Step 5: Create the variable declaration "let err = ___err!"
-		let letErrDeclaration = VariableDeclSyntax(
-			bindingSpecifier: TokenSyntax.keyword(.let),
-			bindings: PatternBindingListSyntax([patternBinding])
+		let letTErrStatement = CodeBlockItemSyntax(
+			item: .init(
+				VariableDeclSyntax(
+					bindingSpecifier: TokenSyntax.keyword(.let),
+					bindings: PatternBindingListSyntax([
+						PatternBindingSyntax(
+							pattern: IdentifierPatternSyntax(identifier: .identifier("terr")),
+							initializer: InitializerClauseSyntax(
+								equal: .equalToken(),
+								value: ExprSyntax(
+									AsExprSyntax(
+										expression: DeclReferenceExprSyntax(
+											baseName: .identifier("err")
+										),
+										asKeyword: .keyword(.as),
+										questionOrExclamationMark: .exclamationMarkToken(),
+										type: IdentifierTypeSyntax(
+											name: .identifier("TError")
+										)
+									)
+								)
+							)
+						)
+					])
+				)
+			)
 		)
-
-		// Step 6: Wrap the variable declaration as a CodeBlockItemSyntax
-		let letErrStatement = CodeBlockItemSyntax(item: .init(letErrDeclaration))
 
 		let usesErr = guardStmt.body.statements.contains { stmt in
 			return stmt.description.contains("err")
 		}
 
+		let usesTErr = guardStmt.body.statements.contains { stmt in
+			return stmt.description.contains("terr")
+		}
+
+		let usesNSErr = guardStmt.body.statements.contains { stmt in
+			return stmt.description.contains("nserr")
+		}
+
 		// Step 7: Combine the new "let err = ___err!" statement with the original guard body statements
 		let newBodyStatements =
-			(usesErr
+			(usesErr || (usesTErr && traced) || usesNSErr
 				? [letErrStatement]
 				: [])
+			+ (usesNSErr
+				? [letNSErrStatement]
+				: [])
+			+ (usesTErr && traced
+				? [letTErrStatement]
+				: [])
+
 			+ guardStmt.body.statements.map { stmt in
 				return stmt
 			}

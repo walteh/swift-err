@@ -51,11 +51,12 @@ func myFunctionFunc(_ arg: () throws -> UInt32) throws -> Result<UInt32, Error> 
 // }
 
 // start
-@err
+@err_traced
 func abc() async throws -> Result<String, Error> {
 	var vheck = UInt32(12)
 	guard let res = try myInoutFunc(&vheck).get() else {
-		return .failure(err)
+		let terrD: TError = ___err_1! as! TError
+		return .failure(terr)
 	}
 	return .success("\(res)")
 }

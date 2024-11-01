@@ -22,7 +22,7 @@ import XCTest
 // }
 
 final class ErrMacrosTests: XCTestCase {
-	func testMacroDeep() throws {
+	func testMacroDeepA() throws {
 		#if canImport(ErrMacros)
 			assertMacroExpansion(
 				"""

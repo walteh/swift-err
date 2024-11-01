@@ -185,6 +185,20 @@ class GuardStatementVisitor: SyntaxRewriter {
 			bindings: PatternBindingListSyntax([patternBinding])
 		)
 
+		// get the else statemtn
+		// if let catched = guardStmt.body.unexpectedBeforeLeftBrace {
+		// 	if let first = catched.first {
+		// 		if let first = first.as(TokenSyntax.self) {
+		// 			if first.tokenKind == .keyword(.catch) {
+		// 				print("HELLO \(first)")
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+		// print(guardStmt.debugDescription)
+
+		// print("HELLO \(guardStmt.body.unexpectedBeforeLeftBrace)")
 		// Step 6: Wrap the variable declaration as a CodeBlockItemSyntax
 		let letErrStatement = CodeBlockItemSyntax(item: .init(letErrDeclaration))
 

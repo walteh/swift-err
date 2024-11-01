@@ -1,26 +1,6 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-@attached(body)
-public macro err() = #externalMacro(module: "ErrMacros", type: "Err")
-
-@attached(body)
-public macro err_traced() = #externalMacro(module: "ErrMacros", type: "ErrTraced")
-
-@attached(body)
-public macro errdo() = #externalMacro(module: "ErrMacros", type: "DoErr")
-
-@attached(body)
-public macro errdo_traced() = #externalMacro(module: "ErrMacros", type: "DoErrTraced")
-
-public struct TraceableError: Error {
-	public let line: UInt
-	public let file: String
-	public let function: String
-
-	public let root: Error
-}
-
 public extension Result {
 	func ___to(_ err: inout Error?) -> (Success?) {
 		switch self {
@@ -42,7 +22,13 @@ public extension Result {
 		case let .success(value):
 			return value
 		case let .failure(error):
-			err = TraceableError(line: __line, file: __file, function: __function, root: error)
+			err = TError(
+				"caught by macro",
+				root: error,
+				__file: __file,
+				__function: __function,
+				__line: __line
+			)
 			return nil
 		}
 	}
@@ -90,7 +76,13 @@ public extension Result where Failure == Error, Success: ~Copyable {
 		__line: UInt = #line
 	) -> Result<Success, Failure> {
 		return Result { try body() }.mapError { err in
-			return TraceableError(line: __line, file: __file, function: __function, root: err)
+			return TError(
+				"caught by macro",
+				root: err,
+				__file: __file,
+				__function: __function,
+				__line: __line
+			)
 		}
 	}
 
@@ -105,7 +97,13 @@ public extension Result where Failure == Error, Success: ~Copyable {
 			return .success(result)
 		} catch {
 			return .failure(
-				TraceableError(line: __line, file: __file, function: __function, root: error)
+				TError(
+					"caught by macro",
+					root: error,
+					__file: __file,
+					__function: __function,
+					__line: __line
+				)
 			)
 		}
 	}

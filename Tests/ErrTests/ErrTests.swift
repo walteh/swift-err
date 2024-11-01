@@ -1,5 +1,6 @@
-import Err
 import XCTest
+
+@testable import Err
 
 func dummyAsyncFunc<T>(_ arg: consuming T, _ err: consuming Error?) async throws -> T {
 	if let err = err {
@@ -43,11 +44,11 @@ final class ErrTests: XCTestCase {
 		let failureValue = failureResult.___to___traced(&error)
 		XCTAssertNil(failureValue)
 		XCTAssertNotNil(error)
-		XCTAssertTrue(error is TraceableError)
-		if let traceableError = error as? TraceableError {
-			XCTAssertEqual(traceableError.file, #file)
-			XCTAssertEqual(traceableError.function, #function)
-			XCTAssertEqual(traceableError.line, #line - 7)  // Adjust this based on the actual line number
+		XCTAssertTrue(error is TError)
+		if let TError = error as? TError {
+			XCTAssertEqual(TError.caller.file, #file)
+			XCTAssertEqual(TError.caller.function, #function)
+			XCTAssertEqual(TError.caller.line, #line - 7)  // Adjust this based on the actual line number
 		}
 	}
 
@@ -98,11 +99,11 @@ final class ErrTests: XCTestCase {
 			throw NSError(domain: "Test", code: 5, userInfo: nil)
 		})
 		XCTAssertThrowsError(try failureResult.get()) { error in
-			XCTAssertTrue(error is TraceableError)
-			if let traceableError = error as? TraceableError {
-				XCTAssertEqual(traceableError.file, #fileID)
-				XCTAssertEqual(traceableError.function, #function)
-				XCTAssertEqual((traceableError.root as NSError).code, 5)
+			XCTAssertTrue(error is TError)
+			if let TError = error as? TError {
+				XCTAssertEqual(TError.caller.file, #fileID)
+				XCTAssertEqual(TError.caller.function, #function)
+				XCTAssertEqual((TError.root as NSError).code, 5)
 			}
 		}
 	}
@@ -122,11 +123,11 @@ final class ErrTests: XCTestCase {
 			)
 		})
 		XCTAssertThrowsError(try failureResult.get()) { error in
-			XCTAssertTrue(error is TraceableError)
-			if let traceableError = error as? TraceableError {
-				XCTAssertEqual(traceableError.file, #fileID)
-				XCTAssertEqual(traceableError.function, #function)
-				XCTAssertEqual((traceableError.root as NSError).code, 6)
+			XCTAssertTrue(error is TError)
+			if let t = error as? TError {
+				XCTAssertEqual(t.caller.file, #fileID)
+				XCTAssertEqual(t.caller.function, #function)
+				XCTAssertEqual((t.root as NSError).code, 6)
 			}
 		}
 	}

@@ -3,10 +3,8 @@ import SwiftCompilerPlugin
 import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxBuilder
-@_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
-import SwiftSyntaxMacros
 
-class GuardStatementVisitor: SyntaxRewriter {
+class GuardVisitor: SyntaxRewriter {
 
 	var traced: Bool = false
 
@@ -128,8 +126,6 @@ class GuardStatementVisitor: SyntaxRewriter {
 		if useAwait {
 			checkName = "___err___create___sendable"
 		}
-
-		// print(guardStmt.debugDescription)
 
 		let errString = "___err_\(getNextId())"
 			.replacingOccurrences(of: "/", with: "_")
@@ -284,9 +280,15 @@ class GuardStatementVisitor: SyntaxRewriter {
 		// Step 6: Wrap the variable declaration as a CodeBlockItemSyntax
 		let letErrStatement = CodeBlockItemSyntax(item: .init(letErrDeclaration))
 
+		let usesErr = guardStmt.body.statements.contains { stmt in
+			return stmt.description.contains("err")
+		}
+
 		// Step 7: Combine the new "let err = ___err!" statement with the original guard body statements
 		let newBodyStatements =
-			[letErrStatement]
+			(usesErr
+				? [letErrStatement]
+				: [])
 			+ guardStmt.body.statements.map { stmt in
 				return stmt
 			}
@@ -319,42 +321,5 @@ class GuardStatementVisitor: SyntaxRewriter {
 			.with(\.conditions, newConditionList)
 			.with(\.body, newBody)
 
-	}
-}
-
-@_spi(ExperimentalLanguageFeature)
-public struct Err: BodyMacro {
-	public static func expansion(
-		of syn: AttributeSyntax,
-		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
-		in ind: some MacroExpansionContext
-	) throws -> [CodeBlockItemSyntax] {
-		guard let body = declaration.body else { return [] }
-
-		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
-
-		let result: CodeBlockSyntax = visitor.visit(body)
-
-		// add an indentation to the result
-		return [] + result.statements + []
-	}
-}
-
-@_spi(ExperimentalLanguageFeature)
-public struct ErrTraced: BodyMacro {
-	public static func expansion(
-		of _: AttributeSyntax,
-		providingBodyFor declaration: some DeclSyntaxProtocol & WithOptionalCodeBlockSyntax,
-
-		in _: some MacroExpansionContext
-	) throws -> [CodeBlockItemSyntax] {
-		guard let body = declaration.body else { return [] }
-
-		let visitor = GuardStatementVisitor(viewMode: .sourceAccurate)
-		visitor.traced = true
-		let result: CodeBlockSyntax = visitor.visit(body)
-
-		// add an indentation to the result
-		return [] + result.statements + []
 	}
 }

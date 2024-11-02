@@ -1,6 +1,3 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
 public extension Result {
 	func ___to(_ err: inout Error?) -> (Success?) {
 		switch self {
@@ -22,12 +19,11 @@ public extension Result {
 		case let .success(value):
 			return value
 		case let .failure(error):
-			err = TError(
-				"caught by macro",
+			err = CError(
 				root: error,
-				__file: __file,
-				__function: __function,
-				__line: __line
+				file: __file,
+				function: __function,
+				line: __line
 			)
 			return nil
 		}
@@ -76,12 +72,11 @@ public extension Result where Failure == Error, Success: ~Copyable {
 		__line: UInt = #line
 	) -> Result<Success, Failure> {
 		return Result { try body() }.mapError { err in
-			return TError(
-				"caught by macro",
+			return CError(
 				root: err,
-				__file: __file,
-				__function: __function,
-				__line: __line
+				file: __file,
+				function: __function,
+				line: __line
 			)
 		}
 	}
@@ -97,12 +92,11 @@ public extension Result where Failure == Error, Success: ~Copyable {
 			return .success(result)
 		} catch {
 			return .failure(
-				TError(
-					"caught by macro",
+				CError(
 					root: error,
-					__file: __file,
-					__function: __function,
-					__line: __line
+					file: __file,
+					function: __function,
+					line: __line
 				)
 			)
 		}

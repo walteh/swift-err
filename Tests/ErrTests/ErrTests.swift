@@ -44,11 +44,11 @@ final class ErrTests: XCTestCase {
 		let failureValue = failureResult.___to___traced(&error)
 		XCTAssertNil(failureValue)
 		XCTAssertNotNil(error)
-		XCTAssertTrue(error is TError)
-		if let TError = error as? TError {
+		XCTAssertTrue(error is CError)
+		if let TError = error as? CError {
 			XCTAssertEqual(TError.caller.file, #file)
 			XCTAssertEqual(TError.caller.function, #function)
-			XCTAssertEqual(TError.caller.line, #line - 7)  // Adjust this based on the actual line number
+			XCTAssertEqual(TError.caller.line, "\(#line - 7)")  // Adjust this based on the actual line number
 		}
 	}
 
@@ -99,8 +99,8 @@ final class ErrTests: XCTestCase {
 			throw NSError(domain: "Test", code: 5, userInfo: nil)
 		})
 		XCTAssertThrowsError(try failureResult.get()) { error in
-			XCTAssertTrue(error is TError)
-			if let TError = error as? TError {
+			XCTAssertTrue(error is CError)
+			if let TError = error as? CError {
 				XCTAssertEqual(TError.caller.file, #fileID)
 				XCTAssertEqual(TError.caller.function, #function)
 				XCTAssertEqual((TError.root as NSError).code, 5)
@@ -123,8 +123,8 @@ final class ErrTests: XCTestCase {
 			)
 		})
 		XCTAssertThrowsError(try failureResult.get()) { error in
-			XCTAssertTrue(error is TError)
-			if let t = error as? TError {
+			XCTAssertTrue(error is CError)
+			if let t = error as? CError {
 				XCTAssertEqual(t.caller.file, #fileID)
 				XCTAssertEqual(t.caller.function, #function)
 				XCTAssertEqual((t.root as NSError).code, 6)

@@ -12,6 +12,14 @@ let package = Package(
 			name: "Err",
 			targets: ["Err"]
 		),
+		.library(
+			name: "LogDistributor",
+			targets: ["LogDistributor"]
+		),
+		.library(
+			name: "LogEvent",
+			targets: ["LogEvent"]
+		),
 
 		.executable(
 			name: "ErrSamples",
@@ -41,6 +49,23 @@ let package = Package(
 			name: "Err",
 			dependencies: [
 				"ErrMacros",
+				.product(name: "Logging", package: "swift-log"),
+			]
+		),
+
+		.target(
+			name: "LogDistributor",
+			dependencies: [
+				"LogEvent",
+				.product(name: "Logging", package: "swift-log"),
+				.product(name: "ServiceContextModule", package: "swift-service-context"),
+			]
+		),
+
+		.target(
+			name: "LogEvent",
+			dependencies: [
+				"Err",
 				.product(name: "Logging", package: "swift-log"),
 				.product(name: "ServiceContextModule", package: "swift-service-context"),
 			]

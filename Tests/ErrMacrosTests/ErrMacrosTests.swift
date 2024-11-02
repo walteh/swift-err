@@ -30,7 +30,7 @@ final class ErrMacrosTests: XCTestCase {
 				"""
 				@err_traced func hi() -> Result<String, Error> {
 					guard let res = try myThrowingFunc(12) else {
-						return .failure(terr)
+						return .failure(err)
 					}
 					return .success(res)
 				}
@@ -42,8 +42,7 @@ final class ErrMacrosTests: XCTestCase {
 								try myThrowingFunc(12)
 							}).___to___traced(&___err_1) else {
 								let err = ___err_1!
-								let terr = err as! TError
-								return .failure(terr)
+								return .failure(err)
 							}
 						return .success(res)
 					}
@@ -61,7 +60,7 @@ final class ErrMacrosTests: XCTestCase {
 				"""
 				@err_traced func hi() -> Result<String, Error> {
 					guard let res = try myThrowingFunc(12) else {
-						return .failure(nserr)
+						return .failure(err)
 					}
 					return .success(res)
 				}
@@ -73,8 +72,7 @@ final class ErrMacrosTests: XCTestCase {
 								try myThrowingFunc(12)
 							}).___to___traced(&___err_1) else {
 								let err = ___err_1!
-								let nserr = err as! NSError
-								return .failure(nserr)
+								return .failure(err)
 							}
 						return .success(res)
 					}

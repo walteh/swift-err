@@ -268,84 +268,77 @@ class GuardVisitor: SyntaxRewriter {
 				)
 			)
 		)
-		let letNSErrStatement = CodeBlockItemSyntax(
-			item: .init(
-				VariableDeclSyntax(
-					bindingSpecifier: TokenSyntax.keyword(.let),
-					bindings: PatternBindingListSyntax([
-						PatternBindingSyntax(
-							pattern: IdentifierPatternSyntax(identifier: .identifier("nserr")),
-							initializer: InitializerClauseSyntax(
-								equal: .equalToken(),
-								value: ExprSyntax(
-									AsExprSyntax(
-										expression: DeclReferenceExprSyntax(
-											baseName: .identifier("err")
-										),
-										asKeyword: .keyword(.as),
-										questionOrExclamationMark: .exclamationMarkToken(),
-										type: IdentifierTypeSyntax(
-											name: .identifier("NSError")
-										)
-									)
-								)
-							)
-						)
-					])
-				)
-			)
-		)
-		let letTErrStatement = CodeBlockItemSyntax(
-			item: .init(
-				VariableDeclSyntax(
-					bindingSpecifier: TokenSyntax.keyword(.let),
-					bindings: PatternBindingListSyntax([
-						PatternBindingSyntax(
-							pattern: IdentifierPatternSyntax(identifier: .identifier("terr")),
-							initializer: InitializerClauseSyntax(
-								equal: .equalToken(),
-								value: ExprSyntax(
-									AsExprSyntax(
-										expression: DeclReferenceExprSyntax(
-											baseName: .identifier("err")
-										),
-										asKeyword: .keyword(.as),
-										questionOrExclamationMark: .exclamationMarkToken(),
-										type: IdentifierTypeSyntax(
-											name: .identifier("TError")
-										)
-									)
-								)
-							)
-						)
-					])
-				)
-			)
-		)
+		// let letNSErrStatement = CodeBlockItemSyntax(
+		// 	item: .init(
+		// 		VariableDeclSyntax(
+		// 			bindingSpecifier: TokenSyntax.keyword(.let),
+		// 			bindings: PatternBindingListSyntax([
+		// 				PatternBindingSyntax(
+		// 					pattern: IdentifierPatternSyntax(identifier: .identifier("nserr")),
+		// 					initializer: InitializerClauseSyntax(
+		// 						equal: .equalToken(),
+		// 						value: ExprSyntax(
+		// 							AsExprSyntax(
+		// 								expression: DeclReferenceExprSyntax(
+		// 									baseName: .identifier("err")
+		// 								),
+		// 								asKeyword: .keyword(.as),
+		// 								questionOrExclamationMark: .exclamationMarkToken(),
+		// 								type: IdentifierTypeSyntax(
+		// 									name: .identifier("NSError")
+		// 								)
+		// 							)
+		// 						)
+		// 					)
+		// 				)
+		// 			])
+		// 		)
+		// 	)
+		// )
+		// let letTErrStatement = CodeBlockItemSyntax(
+		// 	item: .init(
+		// 		VariableDeclSyntax(
+		// 			bindingSpecifier: TokenSyntax.keyword(.let),
+		// 			bindings: PatternBindingListSyntax([
+		// 				PatternBindingSyntax(
+		// 					pattern: IdentifierPatternSyntax(identifier: .identifier("terr")),
+		// 					initializer: InitializerClauseSyntax(
+		// 						equal: .equalToken(),
+		// 						value: ExprSyntax(
+		// 							AsExprSyntax(
+		// 								expression: DeclReferenceExprSyntax(
+		// 									baseName: .identifier("err")
+		// 								),
+		// 								asKeyword: .keyword(.as),
+		// 								questionOrExclamationMark: .exclamationMarkToken(),
+		// 								type: IdentifierTypeSyntax(
+		// 									name: .identifier("TError")
+		// 								)
+		// 							)
+		// 						)
+		// 					)
+		// 				)
+		// 			])
+		// 		)
+		// 	)
+		// )
 
 		let usesErr = guardStmt.body.statements.contains { stmt in
 			return stmt.description.contains("err")
 		}
 
-		let usesTErr = guardStmt.body.statements.contains { stmt in
-			return stmt.description.contains("terr")
-		}
-
-		let usesNSErr = guardStmt.body.statements.contains { stmt in
-			return stmt.description.contains("nserr")
-		}
-
 		// Step 7: Combine the new "let err = ___err!" statement with the original guard body statements
 		let newBodyStatements =
-			(usesErr || (usesTErr && traced) || usesNSErr
-				? [letErrStatement]
-				: [])
-			+ (usesNSErr
-				? [letNSErrStatement]
-				: [])
-			+ (usesTErr && traced
-				? [letTErrStatement]
-				: [])
+			(usesErr ? [letErrStatement] : [])
+			// (usesErr || (usesTErr && traced) || usesNSErr
+			// 	? [letErrStatement]
+			// 	: [])
+			// + (usesNSErr
+			// 	? [letNSErrStatement]
+			// 	: [])
+			// + (usesTErr && traced
+			// 	? [letTErrStatement]
+			// 	: [])
 
 			+ guardStmt.body.statements.map { stmt in
 				return stmt

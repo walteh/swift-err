@@ -1,31 +1,6 @@
-//
-//  Logging.swift
-//  app
-//
-//  Created by walter on 9/29/22.
-//
-
+import Err
 import Logging
 import ServiceContextModule
-
-// actor Logger {
-// 	private var logger: Logging.Logger
-
-// 	init(label: String) {
-// 		self.logger = Logging.Logger(label: label)
-// 	}
-// }
-
-// var xlogger: Logger = Logger(label: "default")
-
-// @MainActor public func bootstrapLogging(name: String) {
-// 	// xlogger = Logger(label: name)
-// 	LoggingSystem.bootstrap { label in
-// 		var handler = StreamLogHandler.standardOutput(label: label)
-// 		handler.logLevel = .trace
-// 		return handler
-// 	}
-// }
 
 @inline(__always) public func GetContext() -> ServiceContext {
 	return ServiceContext.current ?? ServiceContext.TODO("you should set a context")
@@ -40,35 +15,7 @@ public func log(
 	return LogEvent(level, __file: __file, __function: __function, __line: __line)
 }
 
-public extension ServiceContext {
 
-	var logger: Logging.Logger {
-		return self[LoggerContextKey.self] ?? Logger(label: "default")
-	}
-}
-
-private struct LoggerContextKey: ServiceContextKey {
-	typealias Value = Logger
-}
-
-private struct LoggerMetadataContextKey: ServiceContextKey {
-	typealias Value = Logger.Metadata
-}
-
-public func AddLoggerMetadataToContext(_ ok: (LogEvent) -> LogEvent) {
-	var ctx = GetContext()
-	var metadata = ctx[LoggerMetadataContextKey.self] ?? [:]
-	let event = ok(LogEvent(.trace))
-	for (k, v) in event.metadata {
-		metadata[k] = v
-	}
-	ctx[LoggerMetadataContextKey.self] = metadata
-}
-
-public func AddLoggerToContext(logger: Logger) {
-	var ctx = GetContext()
-	ctx[LoggerContextKey.self] = logger
-}
 
 public struct LogEvent {
 	public let skip: Bool
@@ -90,7 +37,6 @@ public struct LogEvent {
 			self.__file = __file
 			self.__line = __line
 			self.__function = __function
-			// self.caller = ""
 			self.error = nil
 			return
 		}
@@ -147,16 +93,22 @@ let dumpedErrorKey = "dumped_error"
 
 public extension Logger.Metadata {
 	@usableFromInline internal mutating func setDumpedError(_ input: Error) {
-		// Convert error to string representation
-		self[dumpedErrorKey] = .stringConvertible(String(describing: input))
+		if let err = input as? RootError {
+			self[dumpedErrorKey] = .stringConvertible(err)
+		} else {
+			self[dumpedErrorKey] = .stringConvertible(BaseRootError(root: input))
+		}
+
 		return
 	}
 
-	mutating func getAndClearDumpedError() -> String? {
+	mutating func getAndClearDumpedError() -> RootError? {
 		if let val = self[dumpedErrorKey] {
 			self[dumpedErrorKey] = nil
 			if case let .stringConvertible(str) = val {
-				return String(describing: str)
+				if let err = str as? RootError {
+					return err
+				}
 			}
 		}
 		return nil

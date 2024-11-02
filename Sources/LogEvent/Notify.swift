@@ -1,3 +1,5 @@
+import Err
+
 public actor ErrorBroadcaster {
 	public typealias HandlerFunc = @Sendable (any Error) -> Void
 
@@ -16,7 +18,7 @@ public actor ErrorBroadcaster {
 	}
 }
 
-public extension TError {
+public extension MError {
 	func notify() -> Self {
 		ErrorBroadcaster.broadcast(self)
 		return self

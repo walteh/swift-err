@@ -42,6 +42,23 @@ let package = Package(
 			dependencies: [
 				"ErrMacros",
 				.product(name: "Logging", package: "swift-log"),
+			]
+		),
+
+		.target(
+			name: "LogDistributor",
+			dependencies: [
+				"LogEvent",
+				.product(name: "Logging", package: "swift-log"),
+				.product(name: "ServiceContextModule", package: "swift-service-context"),
+			]
+		),
+
+		.target(
+			name: "LogEvent",
+			dependencies: [
+				"Err",
+				.product(name: "Logging", package: "swift-log"),
 				.product(name: "ServiceContextModule", package: "swift-service-context"),
 			]
 		),

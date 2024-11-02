@@ -1,12 +1,3 @@
-//
-//  Caller.swift
-//
-//
-//  Created by walter on 1/24/24.
-//
-
-import Logging
-
 public struct Caller: Sendable {
 	public let file: String
 	public let function: String
@@ -66,8 +57,8 @@ public struct Caller: Sendable {
 		return ""
 	}
 
-	public func format<T: PrettyCallerFormatter>(
-		with formatter: T = NoopPrettyCallFormatter()
+	public func format<T: Formatter>(
+		with formatter: T = NoopFormatter()
 	) -> T.OUTPUT {
 		var functionStr = ""
 		if self.function.contains("(") {
@@ -88,58 +79,36 @@ public struct Caller: Sendable {
 		return targetName + spacesep + filename + dullsep + lineName
 	}
 
-}
-
-public protocol PrettyCallerFormatter {
-	associatedtype OUTPUT: CustomStringConvertible, RangeReplaceableCollection
-	func format(function: String) -> OUTPUT
-	func format(line: String) -> OUTPUT
-	func format(file: String) -> OUTPUT
-	func format(target: String) -> OUTPUT
-	func format(seperator: String) -> OUTPUT
-}
-
-public struct NoopPrettyCallFormatter: PrettyCallerFormatter {
-	public init() {}
-	public func format(function: String) -> String {
-		return function
+	public protocol Formatter {
+		associatedtype OUTPUT: CustomStringConvertible, RangeReplaceableCollection
+		func format(function: String) -> OUTPUT
+		func format(line: String) -> OUTPUT
+		func format(file: String) -> OUTPUT
+		func format(target: String) -> OUTPUT
+		func format(seperator: String) -> OUTPUT
 	}
 
-	public func format(line: String) -> String {
-		return line
+	public struct NoopFormatter: Formatter {
+		public init() {}
+		public func format(function: String) -> String {
+			return function
+		}
+
+		public func format(line: String) -> String {
+			return line
+		}
+
+		public func format(file: String) -> String {
+			return file
+		}
+
+		public func format(target: String) -> String {
+			return target
+		}
+
+		public func format(seperator: String) -> String {
+			return seperator
+		}
 	}
 
-	public func format(file: String) -> String {
-		return file
-	}
-
-	public func format(target: String) -> String {
-		return target
-	}
-
-	public func format(seperator: String) -> String {
-		return seperator
-	}
-}
-
-public extension Logging.Logger.Metadata {
-	mutating func setCaller(_ caller: Caller) {
-		self["file"] = .string(caller.file)
-		self["function"] = .string(caller.function)
-		self["line"] = .string(String(caller.line))
-	}
-
-	func getCaller() -> Caller {
-		return Caller(
-			file: self["file"]?.description ?? "",
-			function: self["function"]?.description ?? "",
-			line: self["line"]?.description ?? ""
-		)
-	}
-
-	mutating func clearCaller() {
-		self.removeValue(forKey: "file")
-		self.removeValue(forKey: "line")
-		self.removeValue(forKey: "function")
-	}
 }

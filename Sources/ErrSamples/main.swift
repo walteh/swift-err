@@ -55,7 +55,7 @@ func myFunctionFunc(_ arg: () throws -> UInt32) throws -> Result<UInt32, Error> 
 func abc() async throws -> Result<String, Error> {
 	var vheck = UInt32(12)
 	guard let res = try myInoutFunc(&vheck).get() else {
-		return .failure(terr)
+		return .failure(err)
 	}
 	return .success("\(res)")
 }

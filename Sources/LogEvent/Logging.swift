@@ -17,7 +17,7 @@ public func log(
 
 
 
-public struct LogEvent {
+public final class LogEvent {
 	public let skip: Bool
 	public let level: Logging.Logger.Level
 	public var error: Swift.Error?
@@ -63,7 +63,7 @@ public struct LogEvent {
 
 	public var metadata: Logging.Logger.Metadata = [:]
 
-	public mutating func err(_ err: Swift.Error?) -> Self {
+	public func err(_ err: Swift.Error?) -> Self {
 		if self.skip { return self }
 		self.error = err
 		if let err = err {
@@ -118,28 +118,28 @@ public extension Logger.Metadata {
 public extension LogEvent {
 
 	@inline(__always)
-	mutating func info(_ key: String, string: String) -> Self {
+	func info(_ key: String, string: String) -> Self {
 		if self.skip { return self }
 		self[metadataKey: key] = .string(string)
 		return self
 	}
 
 	@inline(__always)
-	mutating func info(_ key: String, any: CustomStringConvertible & Sendable) -> Self {
+	func info(_ key: String, any: CustomStringConvertible & Sendable) -> Self {
 		if self.skip { return self }
 		self[metadataKey: key] = .stringConvertible(any)
 		return self
 	}
 
 	@inline(__always)
-	mutating func info(_ key: String, _ s: some CustomDebugStringConvertible) -> Self {
+	func info(_ key: String, _ s: some CustomDebugStringConvertible) -> Self {
 		if self.skip { return self }
 		self[metadataKey: key] = .string(s.debugDescription)
 		return self
 	}
 
 	@inline(__always)
-	mutating func meta(_ data: Logging.Logger.Metadata) -> Self {
+	func meta(_ data: Logging.Logger.Metadata) -> Self {
 		if skip { return self }
 		for (k, v) in data {
 			self.metadata[k] = v

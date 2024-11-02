@@ -120,17 +120,10 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 		}
 
 		let strtxt = text.terminalStylize()
-		let myMetadata = metadata
 		// run this in main actor
 		DispatchQueue.main.async {
-			_ = ConsoleLogger.outputFile.fileLogger.send(
-				level,
-				msg: "\(strtxt)",
-				thread: Thread.current.name ?? "unknown",
-				file: file,
-				function: function,
-				line: Int(line),
-				context: myMetadata
+			_ = ConsoleLogger.outputFile.fileLogger.preformattedSend(
+				msg: "\(strtxt)"
 			)
 		}
 	}
@@ -258,7 +251,8 @@ extension RootError {
 			}
 
 			stream +=
-				"[".consoleText(color: .palette(245)) + wrk + "]".consoleText(color: .palette(245))
+				"[ ".consoleText(color: .palette(245)) + wrk
+				+ " ]".consoleText(color: .palette(245))
 
 			stream += "\n"
 			if let r = list[i] as? MetadataError {
@@ -276,6 +270,14 @@ extension RootError {
 				}
 			}
 
+			stream += "\n"
+		}
+
+		// show the debug desc for the final one
+		if let r = list.last as? CustomDebugStringConvertible {
+			stream += "\n"
+			stream += "🔍 \n"
+			stream += r.debugDescription.consoleText(color: .brightRed, isBold: true)
 			stream += "\n"
 		}
 

@@ -241,9 +241,7 @@ open class BaseDestination: Hashable, Equatable {
 		line: Int,
 		context: Logging.Logger.Metadata? = nil
 	) -> String {
-		if format != "abc" {
-			return msg
-		}
+
 		var text = ""
 		// Prepend a $I for 'ignore' or else the first character is interpreted as a format character
 		// even if the format string did not start with a $.

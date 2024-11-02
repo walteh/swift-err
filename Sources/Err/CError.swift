@@ -29,3 +29,19 @@ public struct CError: RootError, CallError {
 		return "\(root) at \(caller.format()))"
 	}
 }
+
+public func error(
+	_ message: String,
+	root: Error? = nil,
+	__file: String = #fileID,
+	__function: String = #function,
+	__line: UInt = #line
+) -> MError {
+	return MError(
+		message,
+		root: root,
+		__file: __file,
+		__function: __function,
+		__line: __line
+	)
+}

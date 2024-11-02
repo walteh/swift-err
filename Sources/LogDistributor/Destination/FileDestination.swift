@@ -126,6 +126,16 @@ open class FileDestination: BaseDestination {
 		return formattedString
 	}
 
+	// append to file. uses full base class functionality
+	open func preformattedSend(
+		// _ level: Logging.Logger.Level,
+		msg: String
+
+	) -> String? {
+		_ = self.validateSaveFile(str: msg)
+		return msg
+	}
+
 	// check if filesize is bigger than wanted and if yes then rotate them
 	func validateSaveFile(str: String) -> Bool {
 		if self.logFileAmount > 1 {

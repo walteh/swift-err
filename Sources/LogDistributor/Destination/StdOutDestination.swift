@@ -14,7 +14,7 @@ import Logging
 	import OSLog
 #endif
 
-open class ConsoleDestination: BaseDestination {
+open class StdOutDestination: BaseDestination {
 	public enum LogPrintWay {
 		case logger(subsystem: String, category: String)
 		case nslog

@@ -12,6 +12,14 @@ let package = Package(
 			name: "Err",
 			targets: ["Err"]
 		),
+		.library(
+			name: "LogDistributor",
+			targets: ["LogDistributor"]
+		),
+		.library(
+			name: "LogEvent",
+			targets: ["LogEvent"]
+		),
 
 		.executable(
 			name: "ErrSamples",

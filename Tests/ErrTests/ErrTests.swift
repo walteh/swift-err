@@ -48,7 +48,7 @@ final class ErrTests: XCTestCase {
 		if let TError = error as? TError {
 			XCTAssertEqual(TError.caller.file, #file)
 			XCTAssertEqual(TError.caller.function, #function)
-			XCTAssertEqual(TError.caller.line, #line - 7)  // Adjust this based on the actual line number
+			XCTAssertEqual(TError.caller.line, "\(#line - 7)")  // Adjust this based on the actual line number
 		}
 	}
 

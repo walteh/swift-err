@@ -5,43 +5,50 @@
 //  Created by walter on 1/24/24.
 //
 
-import Foundation
 import Logging
 
-public struct Caller {
+public struct Caller: Sendable {
 	public let file: String
 	public let function: String
-	public let line: UInt
+	public let line: String
 
-	public static func build(file: String, function: String, line: UInt) -> Caller {
-		return Caller(file: file, function: function, line: line)
+	public init(file: String, function: String, line: UInt) {
+		self.file = file
+		self.function = function
+		self.line = String(line)
+	}
+
+	public init(file: String, function: String, line: String) {
+		self.file = file
+		self.function = function
+		self.line = line
 	}
 
 	public func merge(into other: Caller) -> Caller {
 		return Caller(
 			file: other.file.isEmpty ? self.file : other.file,
 			function: other.function.isEmpty ? self.function : other.function,
-			line: other.line == 0 ? self.line : other.line
+			line: other.line.isEmpty || other.line == "0" ? self.line : other.line
 		)
 	}
 
 	/// returns the filename of a path
 	func fileNameOfFile() -> String {
-		let fileParts = self.file.components(separatedBy: "/")
+		let fileParts = self.file.split(separator: "/")
 		if let lastPart = fileParts.last {
-			return lastPart
+			return String(lastPart)
 		}
 		return ""
 	}
 
 	func targetOfFile() -> String {
-		let fileParts = self.file.components(separatedBy: "/")
-		if var firstPart = fileParts.first {
-			firstPart = firstPart.replacingOccurrences(of: "", with: "").replacingOccurrences(
-				of: "_",
-				with: "/"
+		let fileParts = self.file.split(separator: "/")
+		if let firstPart = fileParts.first {
+			return String(
+				firstPart.map {
+					$0 == "_" ? "/" : $0
+				}
 			)
-			return firstPart
 		}
 		return ""
 	}
@@ -51,9 +58,9 @@ public struct Caller {
 		let fileName = self.fileNameOfFile()
 
 		if !fileName.isEmpty {
-			let fileNameParts = fileName.components(separatedBy: ".")
+			let fileNameParts = fileName.split(separator: ".")
 			if let firstPart = fileNameParts.first {
-				return firstPart
+				return String(firstPart)
 			}
 		}
 		return ""
@@ -80,6 +87,7 @@ public struct Caller {
 
 		return targetName + spacesep + filename + dullsep + lineName
 	}
+
 }
 
 public protocol PrettyCallerFormatter {
@@ -115,11 +123,17 @@ public struct NoopPrettyCallFormatter: PrettyCallerFormatter {
 }
 
 public extension Logging.Logger.Metadata {
+	mutating func setCaller(_ caller: Caller) {
+		self["file"] = .string(caller.file)
+		self["function"] = .string(caller.function)
+		self["line"] = .string(String(caller.line))
+	}
+
 	func getCaller() -> Caller {
 		return Caller(
 			file: self["file"]?.description ?? "",
 			function: self["function"]?.description ?? "",
-			line: (try? UInt(self["line"]?.description ?? "", format: .number)) ?? 0
+			line: self["line"]?.description ?? ""
 		)
 	}
 

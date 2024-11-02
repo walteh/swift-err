@@ -5,11 +5,29 @@
 //  Created by walter on 9/29/22.
 //
 
-import Foundation
 import Logging
 import ServiceContextModule
 
-@inlinable public func GetContext() -> ServiceContext {
+// actor Logger {
+// 	private var logger: Logging.Logger
+
+// 	init(label: String) {
+// 		self.logger = Logging.Logger(label: label)
+// 	}
+// }
+
+// var xlogger: Logger = Logger(label: "default")
+
+// @MainActor public func bootstrapLogging(name: String) {
+// 	// xlogger = Logger(label: name)
+// 	LoggingSystem.bootstrap { label in
+// 		var handler = StreamLogHandler.standardOutput(label: label)
+// 		handler.logLevel = .trace
+// 		return handler
+// 	}
+// }
+
+@inline(__always) public func GetContext() -> ServiceContext {
 	return ServiceContext.current ?? ServiceContext.TODO("you should set a context")
 }
 
@@ -22,20 +40,10 @@ public func log(
 	return LogEvent(level, __file: __file, __function: __function, __line: __line)
 }
 
-// public extension x {
-// 	static func log(
-// 		_ level: Logging.Logger.Level = .info,
-// 		__file: String = #fileID,
-// 		__function: String = #function,
-// 		__line: UInt = #line
-// 	) -> LogEvent {
-// 		return Log(level, __file: __file, __function: __function, __line: __line)
-// 	}
-// }
-
 public extension ServiceContext {
+
 	var logger: Logging.Logger {
-		return self[LoggerContextKey.self] ?? xlogger
+		return self[LoggerContextKey.self] ?? Logger(label: "default")
 	}
 }
 
@@ -62,11 +70,9 @@ public func AddLoggerToContext(logger: Logger) {
 	ctx[LoggerContextKey.self] = logger
 }
 
-let xlogger = Logger(label: Bundle.main.bundleIdentifier ?? "unknown")
-
-public class LogEvent {
+public struct LogEvent {
+	public let skip: Bool
 	public let level: Logging.Logger.Level
-	public let caller: String
 	public var error: Swift.Error?
 	public let __file: String
 	public let __function: String
@@ -78,9 +84,19 @@ public class LogEvent {
 		__function: String = #function,
 		__line: UInt = #line
 	) {
+		if GetContext().logger.logLevel > level {
+			self.skip = true
+			self.level = .trace
+			self.__file = __file
+			self.__line = __line
+			self.__function = __function
+			// self.caller = ""
+			self.error = nil
+			return
+		}
+		self.skip = false
 		self.level = level
-		self.metadata["function"] = .string(__function)
-		self.caller = "\(__file.split(separator: "/").last!):\(__line)"
+		self.metadata.setCaller(Caller(file: __file, function: __function, line: __line))
 		self.__file = __file
 		self.__line = UInt(__line)
 		self.__function = __function
@@ -101,60 +117,29 @@ public class LogEvent {
 
 	public var metadata: Logging.Logger.Metadata = [:]
 
-	public func err(_ err: Swift.Error?) -> Self {
+	public mutating func err(_ err: Swift.Error?) -> Self {
+		if self.skip { return self }
 		self.error = err
-		return self
-	}
-
-	public func add(_ key: String, string: String) -> Self {
-		return self.info(key, string)
-	}
-
-	public func add(_ key: String, any: CustomStringConvertible & Sendable) -> Self {
-		return self.info(key, any: any)
-	}
-
-	public func add(_ key: String, _ s: some CustomDebugStringConvertible) -> Self {
-		return self.info(key, s)
-	}
-
-	public func info(_ key: String, string: String) -> Self {
-		self[metadataKey: key] = .string(string)
-		return self
-	}
-
-	public func info(_ key: String, any: CustomStringConvertible & Sendable) -> Self {
-		self[metadataKey: key] = .stringConvertible(any)
-		return self
-	}
-
-	@inlinable
-	public func info(_ key: String, _ s: some CustomDebugStringConvertible) -> Self {
-		self[metadataKey: key] = .string(s.debugDescription)
-		return self
-	}
-
-	public func meta(_ data: Logging.Logger.Metadata) -> Self {
-		for (k, v) in data {
-			self.metadata[k] = v
-		}
-		return self
-	}
-
-	@inlinable
-	public func send(_ str: some CustomDebugStringConvertible) {
-		if let err = self.error {
+		if let err = err {
 			self.metadata.setDumpedError(err)
 		}
+		return self
+	}
+
+	@inlinable
+	public func send(_ message: @autoclosure () -> Logger.Message) {
+		if self.skip { return }
+
 		GetContext().logger.log(
 			level: self.level,
-			.init(stringLiteral: str.debugDescription),
+			message(),
 			metadata: self.metadata,
-			source: self.caller,
+			source: nil,
 			file: self.__file,
 			function: self.__function,
 			line: self.__line
 		)
+
 	}
 }
 
@@ -162,19 +147,52 @@ let dumpedErrorKey = "dumped_error"
 
 public extension Logger.Metadata {
 	@usableFromInline internal mutating func setDumpedError(_ input: Error) {
-		self[dumpedErrorKey] = .stringConvertible(input as NSError)
+		// Convert error to string representation
+		self[dumpedErrorKey] = .stringConvertible(String(describing: input))
 		return
 	}
 
-	mutating func getAndClearDumpedError() -> NSError? {
+	mutating func getAndClearDumpedError() -> String? {
 		if let val = self[dumpedErrorKey] {
 			self[dumpedErrorKey] = nil
 			if case let .stringConvertible(str) = val {
-				if let err = str as? NSError {
-					return err
-				}
+				return String(describing: str)
 			}
 		}
 		return nil
 	}
+}
+
+public extension LogEvent {
+
+	@inline(__always)
+	mutating func info(_ key: String, string: String) -> Self {
+		if self.skip { return self }
+		self[metadataKey: key] = .string(string)
+		return self
+	}
+
+	@inline(__always)
+	mutating func info(_ key: String, any: CustomStringConvertible & Sendable) -> Self {
+		if self.skip { return self }
+		self[metadataKey: key] = .stringConvertible(any)
+		return self
+	}
+
+	@inline(__always)
+	mutating func info(_ key: String, _ s: some CustomDebugStringConvertible) -> Self {
+		if self.skip { return self }
+		self[metadataKey: key] = .string(s.debugDescription)
+		return self
+	}
+
+	@inline(__always)
+	mutating func meta(_ data: Logging.Logger.Metadata) -> Self {
+		if skip { return self }
+		for (k, v) in data {
+			self.metadata[k] = v
+		}
+		return self
+	}
+
 }

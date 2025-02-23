@@ -5,6 +5,10 @@ func myThrowingFunc(_ arg: Int) throws -> UInt32 {
 	return UInt32(arg)
 }
 
+func myActualThrowingFunc(_ arg: Int) throws -> UInt32 {
+	throw error("my actual throwing function", root: nil)
+}
+
 func myThrowingAsyncFunc(_ arg: Int) async throws -> UInt32 {
 	return UInt32(arg)
 }
@@ -79,11 +83,29 @@ func abc() async throws -> Result<String, Error> {
 // 	return .success("\(res2)")
 // }
 
+func example() async -> Result<String, Error> {
+	let data: Data
+	let response: URLResponse
+	do {
+		(data, response) = try await URLSession.shared.data(from: URL(string: "https://www.google.com")!)
+	} catch let err {
+		return .failure(error("Failed to load data", root: err))
+	}
+
+	return .success("\(data) \(response)")
+}
+
+// func example2() async -> Result<String, Error> {
+//     return try await URLSession.shared.data(from: URL(string: "https://www.google.com")!)  ?? error("Failed to load data")
+// }
+
 @err
 func checker() async -> Result<String, Error> {
 	guard let res2 = try myThrowingFunc(12) else {
 		return .failure(err)
 	}
+
+	print(res2)
 
 	guard let res3 = try myResultFunc(12).get() else {
 		return .failure(err)
@@ -97,23 +119,103 @@ func checker() async -> Result<String, Error> {
 		return .failure(err)
 	}
 
-	guard
-		let res6 = try await myResultAsyncFunc(12).get()
-	else {
+	guard let res6 = try await myResultAsyncFunc(12).get() else {
 		return .failure(err)
 	}
 
-	guard
-		let res7 = try myFunctionFunc({
-			guard let res = try myResultFunc(12).get() else {
-				throw Hello()
+	guard let res7 = try myFunctionFunc({
+			guard let res = try? myResultFunc(12).get() else {
+				 throw Hello()
 			}
 
 			return res
-		})
-	else {
+		}) else {
 		return .failure(err)
 	}
 
-	return .success("\(res2) \(res3) \(res4) \(res5) \(res6) \(res7)")
+	return .success("\(res2) \(res3) \(res4) \(res7) \(res7) \(res7)")
+}
+
+
+
+// func hi() -> Result<UInt32, Error> {
+// 	guard let res = try! (myThrowingFunc(12) ?? error("oops")).get() else {
+// 		return .failure(err)
+// 	}
+
+
+// 	 // i want res to be "Unnillable value of myThrowingFunc(12)"
+// 	return .success(res)
+// }
+
+extension Swift.Error {
+	func empty() -> Self {
+		return Self.self as! Self
+	}
+}
+
+
+
+
+struct InjectableError: Error {
+}
+
+func injectableError() -> Error {
+	return InjectableError()
+}
+
+
+func hi() async -> Result<UInt32, Error> {
+	var err: Error? = nil
+
+	 guard let res = try await myActualThrowingFunc(12) ?? err else {
+
+		return .failure(error("oops 12", root: err))
+	}
+
+	// i want res to be "Unnillable value of myThrowingFunc(12)"
+	return .success(res)
+}
+
+@err_simple
+func hi2() async -> Result<UInt32, Error> {
+	guard let res = try await myActualThrowingFunc(12) else {
+		return .failure(error("oops", root: err))
+	}
+
+	return .success(res)
+}
+
+
+
+
+func main() async {
+	let res = await checker()
+	print(res)
+}
+
+
+await main()
+
+
+// MARK: - Operators
+// define ~> and ~~ operators
+
+
+func ~> <T>(value: @autoclosure () async throws -> T?, err: inout Error?) async -> T? {
+	do {
+		return try await value()
+	} catch let errd {
+		err = error("my processed function", root: errd)
+		return nil
+	}
+}
+
+func ?? <T>(value: @autoclosure () throws -> T?, err: inout Error?) -> T? {
+	do {
+		return try value()
+	} catch let errd {
+		err = error("my processed function", root: errd)
+		return nil
+	}
 }

@@ -10,5 +10,6 @@ struct ErrMacroPlugin: CompilerPlugin {
 	let providingMacros: [Macro.Type] = [
 		Err.self,
 		ErrTraced.self,
+		ErrSimple.self,
 	]
 }

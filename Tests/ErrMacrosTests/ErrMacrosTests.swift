@@ -10,7 +10,7 @@ import XCTest
 	let testMacros: [String: Macro.Type] = [
 		"err": Err.self,
 		"err_traced": ErrTraced.self,
-
+		"err_simple": ErrSimple.self,
 	]
 #endif
 
@@ -275,6 +275,96 @@ final class ErrMacrosTests: XCTestCase {
 			)
 		#else
 			print("Skipping testMacroDeep because ErrMacroMacros is not available.")
+		#endif
+	}
+
+	func testSimpleErrChecker() throws {
+		#if canImport(ErrMacros)
+			assertMacroExpansion(
+				"""
+				@err_simple
+				func checker() async -> Result<String, Error> {
+					guard let res2 = try myThrowingFunc(12) else {
+						return .failure(err)
+					}
+
+					print(res2)
+
+					guard let res3 = try myResultFunc(12).get() else {
+						return .failure(err)
+					}
+
+					guard let res4 = try myThrowingFunc(12) else {
+						return .failure(err)
+					}
+
+					guard let res5 = try await myThrowingAsyncFunc(12) else {
+						return .failure(err)
+					}
+
+					guard let res6 = try await myResultAsyncFunc(12).get() else {
+						return .failure(err)
+					}
+
+					guard let res7 = try myFunctionFunc({
+						guard let res = try myResultFunc(12).get() else {
+							throw Hello()
+						}
+						return res
+					}) else {
+						return .failure(err)
+					}
+
+					return .success("\\(res2) \\(res3) \\(res4) \\(res5) \\(res6) \\(res7)")
+				}
+				""",
+				expandedSource: """
+				func checker() async -> Result<String, Error> {
+					var err__1: Error? = nil; guard let res2 = try myThrowingFunc(12) ?? err__1 else {
+						let err = err__1!
+						return .failure(err)
+					}
+
+					print(res2)
+
+					var err__2: Error? = nil; guard let res3 = try myResultFunc(12).get() ?? err__2 else {
+						let err = err__2!
+						return .failure(err)
+					}
+
+					var err__3: Error? = nil; guard let res4 = try myThrowingFunc(12) ?? err__3 else {
+						let err = err__3!
+						return .failure(err)
+					}
+
+					var err__4: Error? = nil; guard let res5 = try await myThrowingAsyncFunc(12) ~> err__4 else {
+						let err = err__4!
+						return .failure(err)
+					}
+
+					var err__5: Error? = nil; guard let res6 = try await myResultAsyncFunc(12).get() ~> err__5 else {
+						let err = err__5!
+						return .failure(err)
+					}
+
+					var err__6: Error? = nil; guard let res7 = try myFunctionFunc({
+						guard let res = try? myResultFunc(12).get() else {
+							throw Hello()
+						}
+						return res
+					}) ?? err__6 else {
+						let err = err__6!
+						return .failure(err)
+					}
+
+					return .success("\\(res2) \\(res3) \\(res4) \\(res5) \\(res6) \\(res7)")
+				}
+				""",
+				macros: testMacros,
+				indentationWidth: .tabs(1)
+			)
+		#else
+			print("Skipping testSimpleErrChecker because ErrMacros is not available.")
 		#endif
 	}
 }

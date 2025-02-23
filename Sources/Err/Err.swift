@@ -1,8 +1,8 @@
-
 import Foundation
 
+
 @inline(__always)
-func ~> <T>(value: @autoclosure () async throws -> T?, err: inout Error) async -> T? {
+func ~> <T>(value: @Sendable @autoclosure @escaping () async throws -> T?, err: inout Error) async -> T? {
 	do {
 		return try await value()
 	} catch let errd {
@@ -12,7 +12,7 @@ func ~> <T>(value: @autoclosure () async throws -> T?, err: inout Error) async -
 }
 
 @inline(__always)
-func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
+func ~> <T>(value: @autoclosure @escaping () throws -> T?, err: inout Error) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -22,10 +22,62 @@ func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
 }
 
 
+
+// extension Error {
+// 	@_transparent
+// 	@_alwaysEmitIntoClient
+// 	static func ?? <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
+// 		do {
+// 			return try value()
+// 		} catch let errd {
+// 			err = errd
+// 			return nil
+// 		}
+// 	}
+
+// 	@_transparent
+// 	@_alwaysEmitIntoClient
+// 	static func ?? <T>(value: @autoclosure () async throws -> T?, err: inout Error) async -> T? {
+// 		do {
+// 			return try await value()
+// 		} catch let errd {
+// 			err = errd
+// 			return nil
+// 		}
+// 	}
+// }
+
+// Generic function version using tuples
+// @inline(__always)
+// func ~> <Input, Output>(args: (fn: (Input) throws -> Output, arg: Input), err: inout Error) -> Output? {
+// 	do {
+// 		return try args.fn(args.arg)
+// 	} catch let errd {
+// 		err = errd
+// 		return nil
+// 	}
+// }
+
+// // Generic async function version using tuples
+// @inline(__always)
+// func ~> <Input, Output>(args: (fn: (Input) async throws -> Output, arg: Input), err: inout Error) async -> Output? {
+// 	do {
+// 		return try await args.fn(args.arg)
+// 	} catch let errd {
+// 		err = errd
+// 		return nil
+// 	}
+// }
+
+public struct EmptyError: Error {}
+
+public func emptyError() -> Error {
+	return EmptyError()
+}
+
 // func emptyError() -> Error {
 // 	return MyError(message: "empty error")
 // }
-
 
 // func myThrowingFunc(_ arg: Int) throws -> UInt32 {
 // 	return UInt32(arg)
@@ -71,8 +123,6 @@ func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
 // 	return .success(try arg())
 // }
 
-
-
 // func oldExample() async -> Result<String, Error> {
 // 	let data: Data
 // 	let response: URLResponse
@@ -84,7 +134,6 @@ func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
 
 // 	return .success("\(data) \(response)")
 // }
-
 
 // func newExample() async -> Result<String, Error> {
 // 	var err = emptyError()
@@ -98,7 +147,6 @@ func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
 // // func example2() async -> Result<String, Error> {
 // //     return try await URLSession.shared.data(from: URL(string: "https://www.google.com")!)  ?? error("Failed to load data")
 // // }
-
 
 // func checker() async -> Result<String, Error> {
 // 	var err = emptyError()
@@ -135,6 +183,37 @@ func ~> <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
 // 	}
 
 // 	return .success("\(res2) \(res3) \(res4) \(res7) \(res7) \(res7)")
+// }
+
+// public extension Error {
+// 	static func ?? <T>(value: @autoclosure () throws -> T?, err: inout Error) -> T? {
+// 		do {
+// 			return try value()
+// 		} catch let errd {
+// 			err = errd
+// 			return nil
+// 		}
+// 	}
+
+// 	// Generic function version
+// 	static func tryCall<T, U>(fn: (T) throws -> U?, arg: T, err: inout Error) -> U? {
+// 		do {
+// 			return try fn(arg)
+// 		} catch let errd {
+// 			err = errd
+// 			return nil
+// 		}
+// 	}
+
+// 	// Async version for generic functions
+// 	static func tryCallAsync<T, U>(fn: (T) async throws -> U?, arg: T, err: inout Error) async -> U? {
+// 		do {
+// 			return try await fn(arg)
+// 		} catch let errd {
+// 			err = errd
+// 			return nil
+// 		}
+// 	}
 // }
 
 

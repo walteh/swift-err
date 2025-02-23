@@ -4,12 +4,6 @@ import _TestingInternals
 import Foundation
 
 
-struct EmptyError: Error {
-}
-
-func emptyError() -> Error {
-	return EmptyError()
-}
 
 // Test synchronous success case
 @Test("Sync operator handles success case")
@@ -38,6 +32,25 @@ func testSyncOperatorFailure() throws {
     #expect((err as? TestError)?.message == "test error")
 }
 
+// Test generic function version
+@Test("Generic function version handles error case")
+func testGenericFunctionVersion() throws {
+    func divide(_ x: Int, by y: Int)  throws ->  Double {
+        guard y != 0 else { throw DivisionError.divisionByZero }
+        return Double(x) / Double(y)
+    }
+
+    enum DivisionError: Error {
+        case divisionByZero
+    }
+
+    var err = emptyError()
+    let result = try divide(10, by: 0) ~> err
+
+    #expect(result == nil)
+    #expect(err is DivisionError)
+}
+
 // Test asynchronous success case
 @Test("Async operator handles success case")
 func testAsyncOperatorSuccess() async throws {
@@ -55,10 +68,11 @@ func testAsyncOperatorFailure() async throws {
     }
 
     var err = emptyError()
-    let result = try await {
+    let result = await (try await {
         throw TestError(message: "async test error")
+		await Task.sleep(1_000_000_000)
         return "success"
-    }() ~> err
+    }()) ~> err
 
     #expect(result == nil)
     #expect(err is TestError)
@@ -66,14 +80,14 @@ func testAsyncOperatorFailure() async throws {
 }
 
 // Test with real-world URL session example
-// @Test("URL session error handling")
-// func testURLSessionExample() async throws {
-//     var err = emptyError()
-//     let result = try await URLSession.shared.data(from: URL(string: "https://httpbin.org/status/404")!) ~> err
+@Test("URL session error handling")
+func testURLSessionExample() async throws {
+    var err = emptyError()
+    let result = await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!)) ~> err
 
-//     #expect(result == nil)
-//     #expect(err is URLError)
-// }
+    #expect(result == nil)
+    #expect(err is URLError)
+}
 
 
 

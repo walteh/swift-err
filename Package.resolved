@@ -1,5 +1,5 @@
 {
-  "originHash" : "fd4fc078ac767ca2292cc1b0da859ba74b31da6a8aad5dab894c12a839617dd7",
+  "originHash" : "c6a567351d27f5e0c69dd276720f0e32fc02f1354677f33045cd60b377a16721",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -29,30 +29,12 @@
       }
     },
     {
-      "identity" : "swift-log",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-log.git",
-      "state" : {
-        "revision" : "9cb486020ebf03bfa5b5df985387a14a98744537",
-        "version" : "1.6.1"
-      }
-    },
-    {
       "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-markdown.git",
       "state" : {
         "revision" : "8f79cb175981458a0a27e76cb42fee8e17b1a993",
         "version" : "0.5.0"
-      }
-    },
-    {
-      "identity" : "swift-service-context",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-service-context.git",
-      "state" : {
-        "revision" : "0c62c5b4601d6c125050b5c3a97f20cce881d32b",
-        "version" : "1.1.0"
       }
     },
     {

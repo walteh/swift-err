@@ -4,10 +4,10 @@ import Logging
 public class StdOutHandler: Logging.LogHandler, @unchecked Sendable {
 	public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
 		get {
-			return self.metadata[key]
+			metadata[key]
 		}
 		set(newValue) {
-			self.metadata[key] = newValue
+			metadata[key] = newValue
 		}
 	}
 
@@ -18,8 +18,8 @@ public class StdOutHandler: Logging.LogHandler, @unchecked Sendable {
 	public let fileLogger: StdOutDestination
 
 	public init(level: Logging.Logger.Level) {
-		self.logLevel = level
-		self.fileLogger = .init()
+		logLevel = level
+		fileLogger = .init()
 		// self.fileLogger.useNSLog = true
 		//		fileLogger.colored = true
 	}
@@ -34,7 +34,7 @@ public class StdOutHandler: Logging.LogHandler, @unchecked Sendable {
 		line: UInt
 	) {
 		// try to convert msg object to String and put it on queue
-		_ = self.fileLogger.send(
+		_ = fileLogger.send(
 			level,
 			msg: message.description,
 			thread: Thread.current.name ?? "unknown",

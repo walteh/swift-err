@@ -32,7 +32,7 @@ let package = Package(
 		.target(
 			name: "Err",
 			dependencies: [
-				.product(name: "Logging", package: "swift-log"),
+				.product(name: "Logging", package: "swift-log")
 			]
 		),
 

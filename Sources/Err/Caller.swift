@@ -16,16 +16,16 @@ public struct Caller: Sendable {
 	}
 
 	public func merge(into other: Caller) -> Caller {
-		return Caller(
-			file: other.file.isEmpty ? self.file : other.file,
-			function: other.function.isEmpty ? self.function : other.function,
-			line: other.line.isEmpty || other.line == "0" ? self.line : other.line
+		Caller(
+			file: other.file.isEmpty ? file : other.file,
+			function: other.function.isEmpty ? function : other.function,
+			line: other.line.isEmpty || other.line == "0" ? line : other.line
 		)
 	}
 
 	/// returns the filename of a path
 	func fileNameOfFile() -> String {
-		let fileParts = self.file.split(separator: "/")
+		let fileParts = file.split(separator: "/")
 		if let lastPart = fileParts.last {
 			return String(lastPart)
 		}
@@ -33,7 +33,7 @@ public struct Caller: Sendable {
 	}
 
 	func targetOfFile() -> String {
-		let fileParts = self.file.split(separator: "/")
+		let fileParts = file.split(separator: "/")
 		if let firstPart = fileParts.first {
 			return String(
 				firstPart.map {
@@ -46,7 +46,7 @@ public struct Caller: Sendable {
 
 	/// returns the filename without suffix (= file ending) of a path
 	func fileNameWithoutSuffix() -> String {
-		let fileName = self.fileNameOfFile()
+		let fileName = fileNameOfFile()
 
 		if !fileName.isEmpty {
 			let fileNameParts = fileName.split(separator: ".")
@@ -61,20 +61,20 @@ public struct Caller: Sendable {
 		with formatter: T = NoopFormatter()
 	) -> T.OUTPUT {
 		var functionStr = ""
-		if self.function.contains("(") {
-			let mid = self.function.split(separator: "(")
+		if function.contains("(") {
+			let mid = function.split(separator: "(")
 			functionStr = String(mid.first!) + String(mid[1] == ")" ? "()" : "(...)")
 		} else {
-			functionStr = self.function
+			functionStr = function
 		}
 
 		let dullsep = formatter.format(seperator: ":")
 		let spacesep = formatter.format(seperator: " ")
 
 		_ = formatter.format(function: functionStr)  // not in use right now, but maybe later
-		let filename = formatter.format(file: self.fileNameOfFile())
-		let targetName = formatter.format(target: self.targetOfFile())
-		let lineName = formatter.format(line: String(self.line))
+		let filename = formatter.format(file: fileNameOfFile())
+		let targetName = formatter.format(target: targetOfFile())
+		let lineName = formatter.format(line: String(line))
 
 		return targetName + spacesep + filename + dullsep + lineName
 	}
@@ -91,24 +91,23 @@ public struct Caller: Sendable {
 	public struct NoopFormatter: Formatter {
 		public init() {}
 		public func format(function: String) -> String {
-			return function
+			function
 		}
 
 		public func format(line: String) -> String {
-			return line
+			line
 		}
 
 		public func format(file: String) -> String {
-			return file
+			file
 		}
 
 		public func format(target: String) -> String {
-			return target
+			target
 		}
 
 		public func format(seperator: String) -> String {
-			return seperator
+			seperator
 		}
 	}
-
 }

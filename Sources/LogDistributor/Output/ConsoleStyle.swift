@@ -18,17 +18,17 @@ public struct ConsoleStyle {
 	}
 
 	/// Plain text with no color or background.
-	public static var plain: ConsoleStyle { return .init(color: nil) }
+	public static var plain: ConsoleStyle { .init(color: nil) }
 
 	/// Green text with no background.
-	public static var success: ConsoleStyle { return .init(color: .brightGreen) }
+	public static var success: ConsoleStyle { .init(color: .brightGreen) }
 
 	/// Light blue text with no background.
-	public static var info: ConsoleStyle { return .init(color: .brightCyan) }
+	public static var info: ConsoleStyle { .init(color: .brightCyan) }
 
 	/// Yellow text with no background.
-	public static var warning: ConsoleStyle { return .init(color: .brightOrange) }
+	public static var warning: ConsoleStyle { .init(color: .brightOrange) }
 
 	/// Red text with no background.
-	public static var error: ConsoleStyle { return .init(color: .brightRed) }
+	public static var error: ConsoleStyle { .init(color: .brightRed) }
 }

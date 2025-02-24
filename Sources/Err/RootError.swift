@@ -10,19 +10,18 @@ public struct BaseRootError: RootError {
 	}
 }
 
-public extension RootError {
-
-	var description: String {
-		return "\(root)"
+extension RootError {
+	public var description: String {
+		"\(root)"
 	}
 
-	func rootErrorList() -> [Error] {
+	public func rootErrorList() -> [Error] {
 		var errors = [Error]()
 		errors.append(self)
 
 		// we may want to remove wrapped
 
-		var current: Error? = self.root
+		var current: Error? = root
 		while let error = current {
 			errors.append(error)
 			current = (error as? RootError)?.root
@@ -31,23 +30,22 @@ public extension RootError {
 		return errors.reversed()
 	}
 
-	func deepest<T: Error>(ofType: T.Type) -> Error? {
-		return rootErrorList().first { $0 is T }
+	public func deepest<T: Error>(ofType _: T.Type) -> Error? {
+		rootErrorList().first { $0 is T }
 	}
 
-	func deepest(matching error: Error) -> Error? {
-		return rootErrorList().first { "\($0)" == "\(error)" }
+	public func deepest(matching error: Error) -> Error? {
+		rootErrorList().first { "\($0)" == "\(error)" }
 	}
-
 }
 
-public extension Error {
-	func contains(_ error: Error) -> Bool {
+extension Error {
+	public func contains(_ error: Error) -> Bool {
 		guard let rootable = self as? RootError else { return false }
 		return rootable.deepest(matching: error) != nil
 	}
 
-	func contains<T: Error>(_ type: T.Type) -> Bool {
+	public func contains<T: Error>(_: T.Type) -> Bool {
 		guard let rootable = self as? RootError else { return false }
 		return rootable.deepest(ofType: T.self) != nil
 	}

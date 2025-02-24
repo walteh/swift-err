@@ -17,7 +17,7 @@ public struct CError: RootError, CallError {
 		line: UInt
 	) {
 		self.root = root ?? CError.base
-		self.caller = Caller(
+		caller = Caller(
 			file: file,
 			function: function,
 			line: line
@@ -26,7 +26,7 @@ public struct CError: RootError, CallError {
 
 	// description
 	public var description: String {
-		return "\(root) at \(caller.format()))"
+		"\(root) at \(caller.format()))"
 	}
 }
 
@@ -37,7 +37,7 @@ public func error(
 	__function: String = #function,
 	__line: UInt = #line
 ) -> MError {
-	return MError(
+	MError(
 		message,
 		root: root,
 		__file: __file,

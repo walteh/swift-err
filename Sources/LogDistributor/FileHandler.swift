@@ -11,10 +11,10 @@ import Logging
 public class FileHandler: Logging.LogHandler, @unchecked Sendable {
 	public subscript(metadataKey key: String) -> Logging.Logger.Metadata.Value? {
 		get {
-			return self.metadata[key]
+			metadata[key]
 		}
 		set(newValue) {
-			self.metadata[key] = newValue
+			metadata[key] = newValue
 		}
 	}
 
@@ -25,8 +25,8 @@ public class FileHandler: Logging.LogHandler, @unchecked Sendable {
 	public let fileLogger: FileDestination
 
 	public init(level: Logging.Logger.Level, location: URL) {
-		self.logLevel = level
-		self.fileLogger = .init(logFileURL: location)
+		logLevel = level
+		fileLogger = .init(logFileURL: location)
 		//		fileLogger.colored = true
 	}
 
@@ -40,7 +40,7 @@ public class FileHandler: Logging.LogHandler, @unchecked Sendable {
 		line: UInt
 	) {
 		// try to convert msg object to String and put it on queue
-		_ = self.fileLogger.send(
+		_ = fileLogger.send(
 			level,
 			msg: message.description,
 			thread: Thread.current.name ?? "unknown",

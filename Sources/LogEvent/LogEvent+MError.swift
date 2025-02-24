@@ -1,9 +1,9 @@
 import Err
 
-public extension MError {
+extension MError {
 	public func event(_ manip: (LogEvent) -> LogEvent) -> Self {
 		var event = LogEvent(.error)
 		event = manip(event)
-		return self.info(event.metadata)
+		return info(event.metadata)
 	}
 }

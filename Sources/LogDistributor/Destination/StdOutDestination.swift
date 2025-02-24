@@ -1,5 +1,5 @@
 //
-//  ConsoleDestination.swift
+//  StdOutDestination.swift
 //  SwiftyBeaver
 //
 //  Created by Sebastian Kreutzberger on 05.12.15.
@@ -31,10 +31,11 @@ open class StdOutDestination: BaseDestination {
 			}
 		}
 	}
+
 	/// uses colors compatible to Terminal instead of Xcode, default is false
 	public var useTerminalColors: Bool = false {
 		didSet {
-			if self.useTerminalColors {
+			if useTerminalColors {
 				// bash font color, first value is intensity, second is color
 				// see http://bit.ly/1Otu3Zr & for syntax http://bit.ly/1Tp6Fw9
 				// uses the 256-color table from http://bit.ly/1W1qJuH
@@ -61,9 +62,9 @@ open class StdOutDestination: BaseDestination {
 		}
 	}
 
-	override public var defaultHashValue: Int { return 1 }
+	override public var defaultHashValue: Int { 1 }
 
-	public override init() {
+	override public init() {
 		super.init()
 		levelColor.trace = "💜 "  // purple
 		levelColor.debug = "💚 "  // green

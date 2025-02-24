@@ -1,7 +1,7 @@
 import Foundation
 
-public extension Thread {
-	var isRunningXCTest: Bool {
+extension Thread {
+	public var isRunningXCTest: Bool {
 		threadDictionary.allKeys
 			.contains {
 				($0 as? String)?
@@ -9,22 +9,21 @@ public extension Thread {
 			}
 	}
 
-	var threadName: String {
+	public var threadName: String {
 		if isMainThread {
-			return "main"
+			"main"
 		} else if let threadName = Thread.current.name, !threadName.isEmpty {
-			return threadName
+			threadName
 		} else {
-			return description
+			description
 		}
 	}
 
-	var queueName: String {
+	public var queueName: String {
 		var res = ""
 		if let queueName = String(validatingCString: __dispatch_queue_get_label(nil)) {
 			res = queueName
-		} else if let operationQueueName = OperationQueue.current?.name, !operationQueueName.isEmpty
-		{
+		} else if let operationQueueName = OperationQueue.current?.name, !operationQueueName.isEmpty {
 			res = operationQueueName
 		} else if let dispatchQueueName = OperationQueue.current?.underlyingQueue?.label,
 			!dispatchQueueName.isEmpty

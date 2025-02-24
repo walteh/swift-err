@@ -18,8 +18,8 @@ public actor ErrorBroadcaster {
 	}
 }
 
-public extension MError {
-	func notify() -> Self {
+extension MError {
+	public func notify() -> Self {
 		ErrorBroadcaster.broadcast(self)
 		return self
 	}

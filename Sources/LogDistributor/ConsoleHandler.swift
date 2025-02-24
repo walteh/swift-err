@@ -32,7 +32,7 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 				component: "\(Bundle.main.bundleIdentifier ?? "unknown").logs.log"
 			)
 			self.url = url
-			self.fileLogger = FileDestination(logFileURL: url)
+			fileLogger = FileDestination(logFileURL: url)
 
 			print(
 				"\n================ to view logs =================\n"
@@ -61,7 +61,7 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 	) {
 		self.label = label
 		self.metadata = metadata
-		self.logLevel = level
+		logLevel = level
 		self.metadataProvider = metadataProvider
 	}
 
@@ -69,15 +69,15 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 	///
 	/// This just acts as a getter/setter for the `.metadata` property.
 	public subscript(metadataKey key: String) -> Logger.Metadata.Value? {
-		get { return self.metadata[key] }
-		set { self.metadata[key] = newValue }
+		get { metadata[key] }
+		set { metadata[key] = newValue }
 	}
 
 	public func log(
 		level: Logger.Level,
 		message: Logger.Message,
 		metadata: Logger.Metadata?,
-		source: String,
+		source _: String,
 		file: String,
 		function: String,
 		line: UInt
@@ -108,7 +108,7 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 
 		let allMetadata = (metadata ?? [:])
 			.merging(self.metadata, uniquingKeysWith: { a, _ in a })
-			.merging(self.metadataProvider?.get() ?? [:], uniquingKeysWith: { a, _ in a })
+			.merging(metadataProvider?.get() ?? [:], uniquingKeysWith: { a, _ in a })
 
 		if !allMetadata.isEmpty {
 			// only log metadata if not empty
@@ -129,50 +129,50 @@ public struct ConsoleLogger: Logging.LogHandler, Sendable {
 	}
 }
 
-public extension Logger.Level {
+extension Logger.Level {
 	/// Converts log level to console style
-	var style: ConsoleStyle {
+	public var style: ConsoleStyle {
 		switch self {
-		case .trace, .debug: return .init(color: .perrywinkle)
-		case .info, .notice: return .init(color: .palette(33))
-		case .warning: return .warning
-		case .error: return .error
-		case .critical: return ConsoleStyle(color: .brightRed)
+		case .trace, .debug: .init(color: .perrywinkle)
+		case .info, .notice: .init(color: .palette(33))
+		case .warning: .warning
+		case .error: .error
+		case .critical: ConsoleStyle(color: .brightRed)
 		}
 	}
 
-	var name: String {
+	public var name: String {
 		switch self {
-		case .trace: return "TRC"
-		case .debug: return "DBG"
-		case .info: return "INF"
-		case .notice: return "NTC"
-		case .warning: return "WRN"
-		case .error: return "ERR"
-		case .critical: return "CRT"
+		case .trace: "TRC"
+		case .debug: "DBG"
+		case .info: "INF"
+		case .notice: "NTC"
+		case .warning: "WRN"
+		case .error: "ERR"
+		case .critical: "CRT"
 		}
 	}
 }
 
 struct ConsoleTextPrettyCallFormatter: Caller.Formatter {
 	func format(function: String) -> ConsoleText {
-		return function.consoleText(color: .lightBlue)
+		function.consoleText(color: .lightBlue)
 	}
 
 	func format(line: String) -> ConsoleText {
-		return line.consoleText(color: .brightRed, isBold: true)
+		line.consoleText(color: .brightRed, isBold: true)
 	}
 
 	func format(file: String) -> ConsoleText {
-		return file.consoleText(color: .lightPurple)
+		file.consoleText(color: .lightPurple)
 	}
 
 	func format(target: String) -> ConsoleText {
-		return target.consoleText(color: .orange)
+		target.consoleText(color: .orange)
 	}
 
 	func format(seperator: String) -> ConsoleText {
-		return seperator.consoleText(color: .palette(242))
+		seperator.consoleText(color: .palette(242))
 	}
 }
 
@@ -180,8 +180,8 @@ let formatter = DateFormatter()
 let startDate = Date()
 let calendar = Calendar.current
 
-private extension Logger.Metadata {
-	var sortedDescriptionWithoutQuotes: ConsoleText {
+extension Logger.Metadata {
+	fileprivate var sortedDescriptionWithoutQuotes: ConsoleText {
 		let contents = Array(self).sorted(by: { $0.0 < $1.0 })
 		var text = "".consoleText()
 		for (key, value) in contents {
@@ -206,14 +206,14 @@ func formatKeyValue(key: String, value: CustomStringConvertible) -> ConsoleText 
 }
 
 func formatKeyEqual(_ key: String) -> ConsoleText {
-	return key.description.consoleText(color: .palette(243)) + "=".consoleText(color: .palette(240))
+	key.description.consoleText(color: .palette(243)) + "=".consoleText(color: .palette(240))
 }
 
 extension RootError {
 	func dump() -> ConsoleText {
 		var stream = "".consoleText()
 
-		var list = self.rootErrorList()
+		var list = rootErrorList()
 
 		list.reverse()
 
@@ -243,12 +243,11 @@ extension RootError {
 				wrk += r.caller.format(with: ConsoleTextPrettyCallFormatter()) + quote + " "
 			}
 
-			if let r = list[i] as? NSError {
-				let d = r.domain.consoleText(color: .brightCyan, isBold: true)
-				let code = "\(r.code)".consoleText(color: .brightRed, isBold: true)
-				wrk += " " + formatKeyEqual("domain") + quote + d + quote + " "
-				wrk += formatKeyEqual("code") + quote + code + quote + " "
-			}
+			let r = list[i] as NSError
+			let d = r.domain.consoleText(color: .brightCyan, isBold: true)
+			let code = "\(r.code)".consoleText(color: .brightRed, isBold: true)
+			wrk += " " + formatKeyEqual("domain") + quote + d + quote + " "
+			wrk += formatKeyEqual("code") + quote + code + quote + " "
 
 			stream +=
 				"[ ".consoleText(color: .palette(245)) + wrk

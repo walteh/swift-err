@@ -50,7 +50,7 @@ extension ConsoleText {
 	/// Wraps a string in the ANSI codes indicated
 	/// by the style specification
 	func terminalStylize() -> String {
-		return fragments
+		fragments
 			.map { $0.string.terminalStylize($0.style) }
 			.joined()
 	}
@@ -61,28 +61,26 @@ extension String {
 	/// by the style specification
 	func terminalStylize(_ style: ConsoleStyle) -> String {
 		if style.color == nil, style.background == nil, !style.isBold {
-			return self // No style ("plain")
+			return self  // No style ("plain")
 		}
-		return style.ansiCommand.ansi +
-			self +
-			ANSICommand.sgr([.reset]).ansi
+		return style.ansiCommand.ansi + self + ANSICommand.sgr([.reset]).ansi
 	}
 }
 
 // MARK: private
 
-private extension ANSICommand {
+extension ANSICommand {
 	/// Converts the command to its ansi code.
-	var ansi: String {
+	fileprivate var ansi: String {
 		switch self {
 		case .cursorUp:
-			return "1A".ansi
+			"1A".ansi
 		case .eraseScreen:
-			return "2J".ansi
+			"2J".ansi
 		case .eraseLine:
-			return "2K".ansi
+			"2K".ansi
 		case let .sgr(subcommands):
-			return (subcommands.map(\.ansi).joined(separator: ";") + "m").ansi
+			(subcommands.map(\.ansi).joined(separator: ";") + "m").ansi
 		}
 	}
 }
@@ -91,20 +89,20 @@ extension ANSISGRCommand {
 	/// Converts the command to its ansi code.
 	var ansi: String {
 		switch self {
-		case .reset: return "0"
-		case .bold: return "1"
-		case .underline: return "4"
-		case .slowBlink: return "5"
-		case let .foregroundColor(c): return "3\(c)"
-		case let .brightForegroundColor(c): return "9\(c)"
-		case let .paletteForegroundColor(c): return "38;5;\(c)"
-		case let .rgbForegroundColor(r, g, b): return "38;2;\(r);\(g);\(b)"
-		case .defaultForegroundColor: return "39"
-		case let .backgroundColor(c): return "4\(c)"
-		case let .brightBackgroundColor(c): return "10\(c)"
-		case let .paletteBackgroundColor(c): return "48;5;\(c)"
-		case let .rgbBackgroundColor(r, g, b): return "48;2;\(r);\(g);\(b)"
-		case .defaultBackgroundColor: return "49"
+		case .reset: "0"
+		case .bold: "1"
+		case .underline: "4"
+		case .slowBlink: "5"
+		case let .foregroundColor(c): "3\(c)"
+		case let .brightForegroundColor(c): "9\(c)"
+		case let .paletteForegroundColor(c): "38;5;\(c)"
+		case let .rgbForegroundColor(r, g, b): "38;2;\(r);\(g);\(b)"
+		case .defaultForegroundColor: "39"
+		case let .backgroundColor(c): "4\(c)"
+		case let .brightBackgroundColor(c): "10\(c)"
+		case let .paletteBackgroundColor(c): "48;5;\(c)"
+		case let .rgbBackgroundColor(r, g, b): "48;2;\(r);\(g);\(b)"
+		case .defaultBackgroundColor: "49"
 		}
 	}
 }
@@ -124,21 +122,21 @@ extension ANSISGRColorSpec {
 	/// Convert the color spec to an SGR command
 	var foregroundAnsiCommand: ANSISGRCommand {
 		switch self {
-		case let .traditional(c): return .foregroundColor(c)
-		case let .bright(c): return .brightForegroundColor(c)
-		case let .palette(c): return .paletteForegroundColor(c)
-		case let .rgb(r, g, b): return .rgbForegroundColor(r: r, g: g, b: b)
-		case .default: return .defaultForegroundColor
+		case let .traditional(c): .foregroundColor(c)
+		case let .bright(c): .brightForegroundColor(c)
+		case let .palette(c): .paletteForegroundColor(c)
+		case let .rgb(r, g, b): .rgbForegroundColor(r: r, g: g, b: b)
+		case .default: .defaultForegroundColor
 		}
 	}
 
 	var backgroundAnsiCommand: ANSISGRCommand {
 		switch self {
-		case let .traditional(c): return .backgroundColor(c)
-		case let .bright(c): return .brightBackgroundColor(c)
-		case let .palette(c): return .paletteBackgroundColor(c)
-		case let .rgb(r, g, b): return .rgbBackgroundColor(r: r, g: g, b: b)
-		case .default: return .defaultBackgroundColor
+		case let .traditional(c): .backgroundColor(c)
+		case let .bright(c): .brightBackgroundColor(c)
+		case let .palette(c): .paletteBackgroundColor(c)
+		case let .rgb(r, g, b): .rgbBackgroundColor(r: r, g: g, b: b)
+		case .default: .defaultBackgroundColor
 		}
 	}
 }
@@ -161,9 +159,9 @@ extension ConsoleStyle {
 	}
 }
 
-private extension String {
+extension String {
 	/// Converts a String to a full ANSI command.
-	var ansi: String {
-		return "\u{001B}[" + self
+	fileprivate var ansi: String {
+		"\u{001B}[" + self
 	}
 }

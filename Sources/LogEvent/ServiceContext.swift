@@ -1,10 +1,9 @@
 import Logging
 import ServiceContextModule
 
-public extension ServiceContext {
-
-	var logger: Logging.Logger {
-		return self[LoggerContextKey.self] ?? Logger(label: "default")
+extension ServiceContext {
+	public var logger: Logging.Logger {
+		self[LoggerContextKey.self] ?? Logger(label: "default")
 	}
 }
 
@@ -12,7 +11,7 @@ private struct LoggerContextKey: ServiceContextKey {
 	typealias Value = Logger
 }
 
-internal struct LoggerMetadataContextKey: ServiceContextKey {
+struct LoggerMetadataContextKey: ServiceContextKey {
 	typealias Value = Logger.Metadata
 }
 

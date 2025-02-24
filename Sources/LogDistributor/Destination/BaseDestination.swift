@@ -40,17 +40,17 @@ import Logging
 extension String {
 	/// cross-Swift compatible characters count
 	var length: Int {
-		return count
+		count
 	}
 
 	/// cross-Swift-compatible first character
 	var firstChar: Character? {
-		return first
+		first
 	}
 
 	/// cross-Swift-compatible last character
 	var lastChar: Character? {
-		return last
+		last
 	}
 
 	/// cross-Swift-compatible index
@@ -114,13 +114,13 @@ open class BaseDestination: Hashable, Equatable {
 	// each destination class must have an own hashValue Int
 	#if swift(>=4.2)
 		public func hash(into hasher: inout Hasher) {
-			hasher.combine(self.defaultHashValue)
+			hasher.combine(defaultHashValue)
 		}
 	#else
 		public lazy var hashValue: Int = self.defaultHashValue
 	#endif
 
-	open var defaultHashValue: Int { return 0 }
+	open var defaultHashValue: Int { 0 }
 
 	// each destination instance must have an own serial queue to ensure serial output
 	// GCD gives it a prioritization between User Initiated and Utility
@@ -129,7 +129,7 @@ open class BaseDestination: Hashable, Equatable {
 	public init() {
 		let uuid = NSUUID().uuidString
 		let queueLabel = "swiftybeaver-queue-" + uuid
-		self.queue = DispatchQueue(label: queueLabel, target: self.queue)
+		queue = DispatchQueue(label: queueLabel, target: queue)
 	}
 
 	/// send / store the formatted log message to the destination
@@ -144,8 +144,8 @@ open class BaseDestination: Hashable, Equatable {
 		line: Int,
 		context: Logging.Logger.Metadata? = nil
 	) -> String? {
-		if self.format.hasPrefix("$J") {
-			return self.messageToJSON(
+		if format.hasPrefix("$J") {
+			messageToJSON(
 				level,
 				msg: msg,
 				thread: thread,
@@ -156,8 +156,8 @@ open class BaseDestination: Hashable, Equatable {
 			)
 
 		} else {
-			return self.formatMessage(
-				self.format,
+			formatMessage(
+				format,
 				level: level,
 				msg: msg,
 				thread: thread,
@@ -204,23 +204,21 @@ open class BaseDestination: Hashable, Equatable {
 			s = text
 		}
 		let numStr = String(s.prefix { $0 >= "0" && $0 <= "9" })
-		if let num = Int(numStr) {
-			return (sign * num, (sign == -1 ? 1 : 0) + numStr.count)
-		} else {
+		guard let num = Int(numStr) else {
 			return (0, 0)
 		}
+		return (sign * num, (sign == -1 ? 1 : 0) + numStr.count)
 	}
 
 	private func paddedString(_ text: String, _ toLength: Int, truncating: Bool = false) -> String {
 		if toLength > 0 {
 			// Pad to the left of the string
-			if text.count > toLength {
-				// Hm... better to use suffix or prefix?
-				return truncating ? String(text.suffix(toLength)) : text
-			} else {
+			guard text.count > toLength else {
 				return "".padding(toLength: toLength - text.count, withPad: " ", startingAt: 0)
 					+ text
 			}
+			// Hm... better to use suffix or prefix?
+			return truncating ? String(text.suffix(toLength)) : text
 		} else if toLength < 0 {
 			// Pad to the right of the string
 			let maxLength = truncating ? -toLength : max(-toLength, text.count)
@@ -241,7 +239,6 @@ open class BaseDestination: Hashable, Equatable {
 		line: Int,
 		context: Logging.Logger.Metadata? = nil
 	) -> String {
-
 		var text = ""
 		// Prepend a $I for 'ignore' or else the first character is interpreted as a format character
 		// even if the format string did not start with a $.
@@ -342,7 +339,7 @@ open class BaseDestination: Hashable, Equatable {
 		if let cx = context {
 			dict["metadata"] = cx
 		}
-		return self.jsonStringFromDict(dict)
+		return jsonStringFromDict(dict)
 	}
 
 	/// returns the string of a level
@@ -351,20 +348,20 @@ open class BaseDestination: Hashable, Equatable {
 
 		switch level {
 		case .debug:
-			str = self.levelString.debug
+			str = levelString.debug
 
 		case .info:
-			str = self.levelString.info
+			str = levelString.info
 
 		case .warning:
-			str = self.levelString.warning
+			str = levelString.warning
 
 		case .error:
-			str = self.levelString.error
+			str = levelString.error
 
 		default:
 			// Verbose is default
-			str = self.levelString.trace
+			str = levelString.trace
 		}
 		return str
 	}
@@ -375,25 +372,25 @@ open class BaseDestination: Hashable, Equatable {
 
 		switch level {
 		case .trace:
-			color = self.levelColor.trace
+			color = levelColor.trace
 
 		case .debug:
-			color = self.levelColor.debug
+			color = levelColor.debug
 
 		case .info:
-			color = self.levelColor.info
+			color = levelColor.info
 
 		case .notice:
-			color = self.levelColor.notice
+			color = levelColor.notice
 
 		case .warning:
-			color = self.levelColor.warning
+			color = levelColor.warning
 
 		case .error:
-			color = self.levelColor.error
+			color = levelColor.error
 
 		default:
-			color = self.levelColor.trace
+			color = levelColor.trace
 		}
 
 		return color
@@ -410,7 +407,7 @@ open class BaseDestination: Hashable, Equatable {
 
 	/// returns the filename without suffix (= file ending) of a path
 	func fileNameWithoutSuffix(_ file: String) -> String {
-		let fileName = self.fileNameOfFile(file)
+		let fileName = fileNameOfFile(file)
 
 		if !fileName.isEmpty {
 			let fileNameParts = fileName.components(separatedBy: ".")
@@ -425,18 +422,18 @@ open class BaseDestination: Hashable, Equatable {
 	/// optionally in a given abbreviated timezone like "UTC"
 	func formatDate(_ dateFormat: String, timeZone: String = "") -> String {
 		if !timeZone.isEmpty {
-			self.formatter.timeZone = TimeZone(abbreviation: timeZone)
+			formatter.timeZone = TimeZone(abbreviation: timeZone)
 		}
-		self.formatter.calendar = self.calendar
-		self.formatter.dateFormat = dateFormat
+		formatter.calendar = calendar
+		formatter.dateFormat = dateFormat
 		// let dateStr = formatter.string(from: NSDate() as Date)
-		let dateStr = self.formatter.string(from: Date())
+		let dateStr = formatter.string(from: Date())
 		return dateStr
 	}
 
 	/// returns a uptime string
 	func uptime() -> String {
-		let interval = Date().timeIntervalSince(self.startDate)
+		let interval = Date().timeIntervalSince(startDate)
 
 		let hours = Int(interval) / 3600
 		let minutes = Int(interval / 60) - Int(hours * 60)
@@ -488,7 +485,7 @@ open class BaseDestination: Hashable, Equatable {
 	/// returns boolean and is used to decide whether to resolve
 	/// the message before invoking shouldLevelBeLogged
 	func hasMessageFilters() -> Bool {
-		return false
+		false
 	}
 
 	/// checks if level is at least minLevel or if a minLevel filter for that path does exist
@@ -499,29 +496,28 @@ open class BaseDestination: Hashable, Equatable {
 		function _: String,
 		message _: String? = nil
 	) -> Bool {
-		if level.rawValue >= self.minLevel.rawValue {
-			if self.debugPrint {
-				print("filters are empty and level >= minLevel")
-			}
-			return true
-		} else {
-			if self.debugPrint {
+		guard level.rawValue >= minLevel.rawValue else {
+			if debugPrint {
 				print("filters are empty and level < minLevel")
 			}
 			return false
 		}
+		if debugPrint {
+			print("filters are empty and level >= minLevel")
+		}
+		return true
 	}
 
 	/**
-	 Triggered by main flush() method on each destination. Runs in background thread.
-	 Use for destinations that buffer log items, implement this function to flush those
-	 buffers to their final destination (web server...)
-	 */
+     Triggered by main flush() method on each destination. Runs in background thread.
+     Use for destinations that buffer log items, implement this function to flush those
+     buffers to their final destination (web server...)
+     */
 	func flush() {
 		// no implementation in base destination needed
 	}
 }
 
 public func == (lhs: BaseDestination, rhs: BaseDestination) -> Bool {
-	return ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
+	ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
 }

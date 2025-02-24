@@ -3,16 +3,10 @@ import Testing
 
 @testable import Err
 
-struct EmptyError: Error {}
-
-func emptyError() -> Error {
-	EmptyError()
-}
-
 // Test synchronous success case
 @Test("Sync operator handles success case")
 func testSyncOperatorSuccess() {
-	var err = emptyError()
+	var err = Error.empty
 	let result = try { "success" }() !> err
 	#expect(result == "success")
 	#expect(err is EmptyError)
@@ -25,7 +19,7 @@ func testSyncOperatorFailure() throws {
 		let message: String
 	}
 
-	var err = emptyError()
+	var err = Error.empty
 	let result =
 		try {
 			throw TestError(message: "test error")
@@ -49,7 +43,7 @@ func testGenericFunctionVersion() throws {
 		case divisionByZero
 	}
 
-	var err = emptyError()
+	var err = Error.empty
 	let result = try divide(10, by: 0) !> err
 
 	#expect(result == nil)
@@ -59,7 +53,7 @@ func testGenericFunctionVersion() throws {
 // Test asynchronous success case
 @Test("Async operator handles success case")
 func testAsyncOperatorSuccess() async throws {
-	var err = emptyError()
+	var err = Error.empty
 	let result = try await { "success" }() !> err
 	#expect(result == "success")
 	#expect(err is EmptyError)
@@ -72,7 +66,7 @@ func testAsyncOperatorFailure() async throws {
 		let message: String
 	}
 
-	var err = emptyError()
+	var err = Error.empty
 	let result =
 		await
 		(try await {
@@ -89,8 +83,7 @@ func testAsyncOperatorFailure() async throws {
 // Test with real-world URL session example
 @Test("URL session error handling")
 func testURLSessionExample() async throws {
-
-	var err = emptyError()
+	var err = Error.empty
 	let result =
 		await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
 		!>> err
@@ -101,7 +94,7 @@ func testURLSessionExample() async throws {
 
 @Test("URL session error handling")
 func testURLSessionExample2() async throws {
-	var err = emptyError()
+	var err = Error.empty
 	guard
 		let result = await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
 			!>> .apply(&err, "test")
@@ -110,9 +103,9 @@ func testURLSessionExample2() async throws {
 	}
 
 	#expect(result == nil)
-	#expect(err is MError)
-	#expect((err as? MError)?.message == "test")
-	#expect((err as? MError)?.root is URLError)
+	#expect(err is ContextError)
+	#expect((err as? ContextError)?.message == "test")
+	#expect((err as? ContextError)?.cause is URLError)
 }
 
 @Test("URL session error handling")
@@ -120,7 +113,7 @@ func testURLSessionExample3() async throws {
 	func someResult() -> Result<Data, Error> {
 		.success(Data())
 	}
-	var err = emptyError()
+	var err = Error.empty
 	let res = someResult()
 	guard let result = res !> err else {
 		return
@@ -136,7 +129,7 @@ func testURLSessionExample4() async throws {
 		.success(Data())
 	}
 
-	var err = emptyError()
+	var err = Error.empty
 	guard let result = await someAsyncResult() !> err else {
 		return
 	}

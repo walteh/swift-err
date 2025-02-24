@@ -18,7 +18,7 @@ public actor ErrorBroadcaster {
 	}
 }
 
-extension MError {
+extension ContextError {
 	public func notify() -> Self {
 		ErrorBroadcaster.broadcast(self)
 		return self

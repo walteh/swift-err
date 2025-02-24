@@ -75,9 +75,9 @@ func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ErrInfo) -> T? 
 	do {
 		return try value()
 	} catch let errd {
-		err.err_ptr.pointee = MError(
+		err.err_ptr.pointee = ContextError(
 			err.message,
-			root: errd,
+			cause: errd,
 			__file: err.file,
 			__function: err.function,
 			__line: err.line
@@ -94,9 +94,9 @@ func !>> <T>(
 	do {
 		return try await value()
 	} catch let errd {
-		err.err_ptr.pointee = MError(
+		err.err_ptr.pointee = ContextError(
 			err.message,
-			root: errd,
+			cause: errd,
 			__file: err.file,
 			__function: err.function,
 			__line: err.line

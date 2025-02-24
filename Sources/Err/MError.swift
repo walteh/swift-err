@@ -1,36 +1,36 @@
 import Logging
 
-public protocol MessageError {
+public protocol ErrorWithMessage {
 	var message: String { get }
 }
 
-public protocol MetadataError {
+public protocol ErrorWithLoggerMetadata {
 	var metadata: Logger.Metadata { get }
 }
 
-public struct MError: RootError, CallError, MessageError, MetadataError {
+public struct ContextError: ErrorWithCause, ErrorWithCaller, ErrorWithMessage, ErrorWithLoggerMetadata {
 	public let message: String
 	public var metadata: Logger.Metadata
-	public let cerror: CError
+	public let callerError: CallerError
 
-	public var root: Error {
-		cerror.root
+	public var cause: Error {
+		callerError.cause
 	}
 
 	public var caller: Caller {
-		cerror.caller
+		callerError.caller
 	}
 
 	public init(
 		_ message: String,
-		root: Error? = nil,
+		cause: Error? = nil,
 		__file: String = #fileID,
 		__function: String = #function,
 		__line: UInt = #line
 	) {
 		self.message = message
-		cerror = CError(
-			root: root,
+		callerError = CallerError(
+			cause: cause,
 			file: __file,
 			function: __function,
 			line: __line
@@ -40,7 +40,7 @@ public struct MError: RootError, CallError, MessageError, MetadataError {
 	}
 }
 
-extension MError {
+extension ContextError {
 	public func info(_ key: String, _ value: Any) -> Self {
 		var copy = self
 		copy.metadata[key] = .stringConvertible(String(describing: value))
@@ -56,13 +56,13 @@ extension MError {
 	}
 }
 
-extension MError: CustomStringConvertible, CustomDebugStringConvertible {
+extension ContextError: CustomStringConvertible, CustomDebugStringConvertible {
 	public var description: String {
-		"[ message=\"\(message)\" caller=\"\(cerror.caller.format())\" ]"
+		"[ message=\"\(message)\" caller=\"\(caller.format())\" ]"
 	}
 
 	public var debugDescription: String {
-		let descriptions = rootErrorList().map { "\($0)" }
+		let descriptions = causeErrorList().map { "\($0)" }
 		return descriptions.joined(separator: " 👉 ")
 	}
 }

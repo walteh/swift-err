@@ -90,18 +90,18 @@ let dumpedErrorKey = "dumped_error"
 
 extension Logger.Metadata {
 	@usableFromInline internal mutating func setDumpedError(_ input: Error) {
-		if let err = input as? RootError {
+		if let err = input as? ErrorWithCause {
 			self[dumpedErrorKey] = .stringConvertible(err)
 		} else {
-			self[dumpedErrorKey] = .stringConvertible(BaseRootError(root: input))
+			self[dumpedErrorKey] = .stringConvertible(CauseError(cause: input))
 		}
 	}
 
-	public mutating func getAndClearDumpedError() -> RootError? {
+	public mutating func getAndClearDumpedError() -> ErrorWithCause? {
 		if let val = self[dumpedErrorKey] {
 			self[dumpedErrorKey] = nil
 			if case let .stringConvertible(str) = val {
-				if let err = str as? RootError {
+				if let err = str as? ErrorWithCause {
 					return err
 				}
 			}

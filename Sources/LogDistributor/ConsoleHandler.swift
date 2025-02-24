@@ -209,11 +209,11 @@ func formatKeyEqual(_ key: String) -> ConsoleText {
 	key.description.consoleText(color: .palette(243)) + "=".consoleText(color: .palette(240))
 }
 
-extension RootError {
+extension ErrorWithCause {
 	func dump() -> ConsoleText {
 		var stream = "".consoleText()
 
-		var list = rootErrorList()
+		var list = causeErrorList()
 
 		list.reverse()
 
@@ -233,12 +233,12 @@ extension RootError {
 
 			var wrk = "".consoleText()
 
-			if let r = list[i] as? MessageError {
+			if let r = list[i] as? ErrorWithMessage {
 				let mess = r.message.consoleText(color: .brightRed, isBold: true)
 				wrk += " " + formatKeyEqual("message") + quote + mess + quote + " "
 			}
 
-			if let r = list[i] as? CallError {
+			if let r = list[i] as? ErrorWithCaller {
 				wrk += formatKeyEqual("caller") + quote
 				wrk += r.caller.format(with: ConsoleTextPrettyCallFormatter()) + quote + " "
 			}
@@ -254,7 +254,7 @@ extension RootError {
 				+ " ]".consoleText(color: .palette(245))
 
 			stream += "\n"
-			if let r = list[i] as? MetadataError {
+			if let r = list[i] as? ErrorWithLoggerMetadata {
 				for (key, value) in r.metadata {
 					stream += "\t" + formatKeyValue(key: key, value: value) + "\n"
 				}

@@ -1,0 +1,27 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"extensions": {
+		"recommendations": [
+			"swiftlang.swift-vscode",
+			"editorconfig.editorconfig",
+			"pkief.material-icon-theme",
+			"mhutchie.git-graph",
+			"walteh.retab-vscode"
+		]
+	},
+	"settings": {
+		"[swift]": {
+			"editor.defaultFormatter": "swiftlang.swift-vscode",
+			"editor.formatOnSave": true,
+		},
+		"editor.formatOnSave": true,
+		"editor.formatOnSaveMode": "file",
+		"editor.codeActionsOnSave": {
+			"source.fixAll": "always"
+		},
+	}
+}

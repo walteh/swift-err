@@ -1,0 +1,7 @@
+{
+	"backgroundIndexing": true,
+	"backgroundPreparationMode": "enabled",
+	"experimentalFeatures": [
+		"on-type-formatting"
+	]
+}

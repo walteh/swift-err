@@ -89,10 +89,11 @@ func testAsyncOperatorFailure() async throws {
 // Test with real-world URL session example
 @Test("URL session error handling")
 func testURLSessionExample() async throws {
+
 	var err = emptyError()
 	let result =
 		await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
-		!>> err
+	!>> err
 
 	#expect(result == nil)
 	#expect(err is URLError)

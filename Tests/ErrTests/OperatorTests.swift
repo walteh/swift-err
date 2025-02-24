@@ -93,7 +93,7 @@ func testURLSessionExample() async throws {
 	var err = emptyError()
 	let result =
 		await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
-	!>> err
+		!>> err
 
 	#expect(result == nil)
 	#expect(err is URLError)
@@ -126,7 +126,7 @@ func testURLSessionExample3() async throws {
 		return
 	}
 
-	#expect(result == nil)
+	#expect(result != nil)
 	#expect(err is EmptyError)
 }
 

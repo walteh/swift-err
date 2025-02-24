@@ -24,8 +24,8 @@ let package = Package(
 	dependencies: [
 		.package(url: "https://github.com/swiftlang/swift-testing.git", branch: "main"),
 		.package(url: "https://github.com/swiftlang/swift-format.git", from: "600.0.0-latest"),
-		.package(url: "https://github.com/apple/swift-log.git", from: "1.6.1"),
-		.package(url: "https://github.com/apple/swift-service-context.git", from: "1.1.0"),
+		.package(url: "https://github.com/apple/swift-log.git", from: "1.6.2"),
+		.package(url: "https://github.com/apple/swift-service-context.git", from: "1.2.0"),
 	],
 
 	targets: [

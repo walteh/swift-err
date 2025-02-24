@@ -97,7 +97,7 @@ func testURLSessionExample() async throws {
 @Test("URL session error handling")
 func testURLSessionExample2() async throws {
     var err = emptyError()
-    guard let result = await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!)) !>> .apply(&err, "test") else {
+    guard let result =  await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))  !>> .apply(&err, "test") else {
         return
     }
 

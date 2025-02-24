@@ -16,7 +16,7 @@ infix operator !> : ErrorHandlingPrecedence
 infix operator !>> : ErrorHandlingPrecedence
 
 @inline(__always)
-func !> <T>(value: @autoclosure @escaping () throws -> T?, err: inout Error) -> T? {
+func !> <T>(value: @autoclosure @escaping () throws -> T, err: inout Error) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -26,7 +26,7 @@ func !> <T>(value: @autoclosure @escaping () throws -> T?, err: inout Error) -> 
 }
 
 @inline(__always)
-func !>> <T>(value: @Sendable @autoclosure @escaping () async throws -> T?, err: inout Error) async -> T? {
+func !>> <T>(value: @Sendable @autoclosure @escaping () async throws -> T, err: inout Error) async -> T? {
 	do {
 		return try await value()
 	} catch let errd {
@@ -56,7 +56,7 @@ struct ErrInfo {
 }
 
 @inline(__always)
-func !> <T>(value: @autoclosure @escaping () throws -> T?, _ err: ErrInfo) -> T? {
+func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ErrInfo) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -66,7 +66,7 @@ func !> <T>(value: @autoclosure @escaping () throws -> T?, _ err: ErrInfo) -> T?
 }
 
 @inline(__always)
-func !>> <T>(value: @Sendable @autoclosure @escaping () async throws -> T?, _ err: ErrInfo) async -> T? {
+func !>> <T>(value: @Sendable @autoclosure @escaping () async throws -> T, _ err: ErrInfo) async -> T? {
     do {
         return try await value()
     } catch let errd {

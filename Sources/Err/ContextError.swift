@@ -1,25 +1,10 @@
 import Logging
 
-public protocol ErrorWithMessage {
-	var message: String { get }
-}
-
-public protocol ErrorWithLoggerMetadata {
-	var metadata: Logger.Metadata { get }
-}
-
-public struct ContextError: ErrorWithCause, ErrorWithCaller, ErrorWithMessage, ErrorWithLoggerMetadata {
+public struct ContextError: Error.WithCause, Error.WithCaller, Error.WithMessage, Error.WithLoggerMetadata {
 	public let message: String
 	public var metadata: Logger.Metadata
-	public let callerError: CallerError
-
-	public var cause: Error {
-		callerError.cause
-	}
-
-	public var caller: Caller {
-		callerError.caller
-	}
+	public let caller: Caller
+	public let cause: Error
 
 	public init(
 		_ message: String,
@@ -29,8 +14,8 @@ public struct ContextError: ErrorWithCause, ErrorWithCaller, ErrorWithMessage, E
 		__line: UInt = #line
 	) {
 		self.message = message
-		callerError = CallerError(
-			cause: cause,
+		self.cause = cause ?? TODOError()
+		self.caller = Caller(
 			file: __file,
 			function: __function,
 			line: __line

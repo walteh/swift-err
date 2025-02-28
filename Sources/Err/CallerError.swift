@@ -2,7 +2,11 @@ public protocol ErrorWithCaller: Error {
 	var caller: Caller { get }
 }
 
-public struct CallerError: ErrorWithCause, ErrorWithCaller {
+extension Error {
+	public typealias WithCaller = ErrorWithCaller
+}
+
+public struct CallerError: Error.WithCause, Error.WithCaller {
 	public let cause: Error
 	public let caller: Caller
 
@@ -29,19 +33,3 @@ public struct CallerError: ErrorWithCause, ErrorWithCaller {
 		"\(cause) at \(caller.format()))"
 	}
 }
-
-// public func error(
-// 	_ message: String,
-// 	cause: Error? = nil,
-// 	__file: String = #fileID,
-// 	__function: String = #function,
-// 	__line: UInt = #line
-// ) -> ContextError {
-// 	ContextError(
-// 		message,
-// 		cause: cause,
-// 		__file: __file,
-// 		__function: __function,
-// 		__line: __line
-// 	)
-// }

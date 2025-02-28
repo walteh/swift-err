@@ -11,7 +11,6 @@ precedencegroup LogPrecedence {
 	higherThan: ErrorHandlingPrecedence
 }
 
-infix operator !? : ErrorHandlingPrecedence
 infix operator !> : ErrorHandlingPrecedence
 infix operator !>> : ErrorHandlingPrecedence
 
@@ -38,7 +37,7 @@ func !>> <T>(
 	}
 }
 
-struct ErrInfo {
+struct ContextErrorPointer {
 	var err_ptr: UnsafeMutablePointer<Error>
 	var message: String
 	var file: String
@@ -59,19 +58,19 @@ struct ErrInfo {
 		self.function = function
 	}
 
-	static func apply(
+	static func ctx(
 		_ err_ptr: inout Error,
 		_ message: String,
 		_ file: String = #file,
 		_ line: UInt = #line,
 		_ function: String = #function
-	) -> ErrInfo {
-		ErrInfo(&err_ptr, message, file, line, function)
+	) -> ContextErrorPointer {
+		ContextErrorPointer(&err_ptr, message, file, line, function)
 	}
 }
 
 @inline(__always)
-func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ErrInfo) -> T? {
+func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ContextErrorPointer) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -89,7 +88,7 @@ func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ErrInfo) -> T? 
 @inline(__always)
 func !>> <T>(
 	value: @Sendable @autoclosure @escaping () async throws -> T,
-	_ err: ErrInfo
+	_ err: ContextErrorPointer
 ) async -> T? {
 	do {
 		return try await value()
@@ -112,7 +111,7 @@ extension Result {
 	}
 
 	@inline(__always)
-	static func !> (result: Result, err: ErrInfo) -> Success? {
+	static func !> (result: Result, err: ContextErrorPointer) -> Success? {
 		try result.get() !> err
 	}
 }
@@ -140,3 +139,13 @@ extension Result where Failure == Error, Success: ~Copyable {
 		}
 	}
 }
+
+// @inline(__always)
+// prefix func ~ <T, D>(_ value: T) -> D? where T: Error, D: Error {
+// 	return value.caused(by: D.self)
+// }
+
+// @inline(__always)
+// prefix func ~ <T, D>(_ value: T) -> D? {
+// 	return value is D ? value as? D : nil
+// }

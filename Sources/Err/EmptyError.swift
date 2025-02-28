@@ -1,10 +1,12 @@
-public struct EmptyError: Error {
-	fileprivate static let constant = EmptyError()
-	fileprivate init() {}
+public struct ErrorEmpty: Error {
+	// fileprivate static let constant = ErrorEmpty()
+	init() {}
 }
 
 extension Error {
-	public static var empty: Error {
-		EmptyError.constant
-	}
+	public typealias Empty = ErrorEmpty
 }
+
+// public func empty() -> Error {
+// 	ErrorEmpty.constant
+// }

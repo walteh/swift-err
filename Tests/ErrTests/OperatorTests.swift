@@ -71,7 +71,7 @@ func testAsyncOperatorFailure() async throws {
 		await
 		(try await {
 			throw TestError(message: "async test error")
-			await Task.sleep(1_000_000_000)
+			try await Task.sleep(nanoseconds: 1_000_000_000)
 			return "success"
 		}()) !>> err
 
@@ -89,7 +89,8 @@ func testURLSessionExample() async throws {
 		!>> .ctx(&err, "test")
 
 	#expect(result == nil)
-	#expect(err is URLError)
+	#expect(err is ContextError)
+	#expect(err.cause(as: URLError.self) != nil)
 }
 
 @Test("URL session error handling")

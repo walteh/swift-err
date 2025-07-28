@@ -16,4 +16,13 @@ extension Swift.Error {
 
 		return err.deepest(ofType: Error.self)
 	}
+
+	public func wrap(
+		_ message: String,
+		__file: String = #file,
+		__function: String = #function,
+		__line: UInt = #line
+	) -> ContextError {
+		ContextError(message, cause: self, __file: __file, __function: __function, __line: __line)
+	}
 }

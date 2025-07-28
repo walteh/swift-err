@@ -1,6 +1,6 @@
 public struct ErrorEmpty: Error {
 	// fileprivate static let constant = ErrorEmpty()
-	init() {}
+	public init() {}
 }
 
 extension Error {

@@ -15,7 +15,7 @@ infix operator !> : ErrorHandlingPrecedence
 infix operator !>> : ErrorHandlingPrecedence
 
 @inline(__always)
-func !> <T>(value: @autoclosure @escaping () throws -> T, err: inout Error) -> T? {
+public func !> <T>(value: @autoclosure @escaping () throws -> T, err: inout Error) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -25,7 +25,7 @@ func !> <T>(value: @autoclosure @escaping () throws -> T, err: inout Error) -> T
 }
 
 @inline(__always)
-func !>> <T>(
+public func !>> <T>(
 	value: @Sendable @autoclosure @escaping () async throws -> T,
 	err: inout Error
 ) async -> T? {
@@ -37,14 +37,14 @@ func !>> <T>(
 	}
 }
 
-struct ContextErrorPointer {
+public struct ContextErrorPointer {
 	var err_ptr: UnsafeMutablePointer<Error>
 	var message: String
 	var file: String
 	var line: UInt
 	var function: String
 
-	init(
+	public init(
 		_ err_ptr: inout Error,
 		_ message: String,
 		_ file: String = #file,
@@ -58,7 +58,7 @@ struct ContextErrorPointer {
 		self.function = function
 	}
 
-	static func ctx(
+	public static func ctx(
 		_ err_ptr: inout Error,
 		_ message: String,
 		_ file: String = #file,
@@ -70,7 +70,7 @@ struct ContextErrorPointer {
 }
 
 @inline(__always)
-func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ContextErrorPointer) -> T? {
+public func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ContextErrorPointer) -> T? {
 	do {
 		return try value()
 	} catch let errd {
@@ -86,7 +86,7 @@ func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ContextErrorPoi
 }
 
 @inline(__always)
-func !>> <T>(
+public func !>> <T>(
 	value: @Sendable @autoclosure @escaping () async throws -> T,
 	_ err: ContextErrorPointer
 ) async -> T? {
@@ -106,17 +106,18 @@ func !>> <T>(
 
 extension Result {
 	@inline(__always)
-	static func !> (result: Result, err: inout Error) -> Success? {
+	public static func !> (result: Result, err: inout Error) -> Success? {
 		try result.get() !> err
 	}
 
 	@inline(__always)
-	static func !> (result: Result, err: ContextErrorPointer) -> Success? {
+	public static func !> (result: Result, err: ContextErrorPointer) -> Success? {
 		try result.get() !> err
 	}
 }
 
 extension Result where Failure == Error, Success: ~Copyable {
+	@inline(__always)
 	public init(
 		catching body: () throws -> Success
 	) {
@@ -128,6 +129,7 @@ extension Result where Failure == Error, Success: ~Copyable {
 		}
 	}
 
+	@inline(__always)
 	public init(
 		catching body: @Sendable @escaping () async throws -> Success
 	) async {

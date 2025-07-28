@@ -17,6 +17,24 @@ extension Swift.Error {
 		return err.deepest(ofType: Error.self)
 	}
 
+	public func chain() -> String {
+		var result = ""
+		var current: Error? = self
+		while let err = current {
+			if result.isEmpty {
+				result += "\(err)"
+			} else {
+				result += ": \(err)"
+			}
+			current = err.cause()
+		}
+		return result
+	}
+
+	public func debugDescription() -> String {
+		return self.chain()
+	}
+
 	public func wrap(
 		_ message: String,
 		__file: String = #file,

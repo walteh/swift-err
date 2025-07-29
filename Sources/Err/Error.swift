@@ -6,7 +6,7 @@ extension Swift.Error {
 			return nil
 		}
 
-		return err.deepest(ofType: T.self)
+		return err.shallowest(ofType: T.self)
 	}
 
 	public func cause() -> Error? {
@@ -14,7 +14,7 @@ extension Swift.Error {
 			return nil
 		}
 
-		return err.deepest(ofType: Error.self)
+		return err.cause
 	}
 
 	public func chain() -> String {
@@ -40,22 +40,23 @@ extension Swift.Error {
 		__file: String = #file,
 		__function: String = #function,
 		__line: UInt = #line
-	) -> ContextError {
-		ContextError(message, cause: self, __file: __file, __function: __function, __line: __line)
+	) -> Error {
+		if !shouldStoreCallerInfo() {
+			return CauseError(message: message, cause: self)
+		}
+		return CallerError(message: message, cause: self, __file: __file, __function: __function, __line: __line)
 	}
 
-	public var isNotEmtpy: Bool {
-		if self is Empty {
-			return false
+	public func create(
+		_ message: String,
+		__file: String = #file,
+		__function: String = #function,
+		__line: UInt = #line
+	) -> Error {
+		if !shouldStoreCallerInfo() {
+			return CauseError(message: message, cause: self)
 		}
-		return true
-	}
-
-	public var isEmpty: Bool {
-		if self is Empty {
-			return true
-		}
-		return false
+		return CallerError(message: message, cause: self, __file: __file, __function: __function, __line: __line)
 	}
 
 }

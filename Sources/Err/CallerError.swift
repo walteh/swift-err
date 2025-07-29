@@ -1,5 +1,7 @@
 public protocol ErrorWithCaller: Error {
-	var caller: Caller { get }
+	var file: String { get }
+	var function: String { get }
+	var line: UInt { get }
 }
 
 extension Error {
@@ -7,29 +9,37 @@ extension Error {
 }
 
 public struct CallerError: Error.WithCause, Error.WithCaller {
+	public let message: String
 	public let cause: Error
-	public let caller: Caller
-
-	struct BaseError: Error {}
-
-	public static let base: Error = BaseError()
+	public let file: String
+	public let function: String
+	public let line: UInt
 
 	public init(
+		message: String,
 		cause: Error? = nil,
-		file: String,
-		function: String,
-		line: UInt
+		__file: String = #file,
+		__function: String = #function,
+		__line: UInt = #line
 	) {
-		self.cause = cause ?? BaseError()
-		caller = Caller(
-			file: file,
-			function: function,
-			line: line
-		)
+		self.message = message
+		self.cause = cause ?? NilError.`nil`
+		self.file = __file
+		self.function = __function
+		self.line = __line
+	}
+
+	public init(
+		message: String,
+		__file: String = #file,
+		__function: String = #function,
+		__line: UInt = #line
+	) {
+		self.init(message: message, cause: NilError.`nil`, __file: __file, __function: __function, __line: __line)
 	}
 
 	// description
 	public var description: String {
-		"\(cause) at \(caller.format()))"
+		"\(cause) at \(file):\(line) \(function)"
 	}
 }

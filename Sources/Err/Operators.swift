@@ -74,13 +74,17 @@ public func !> <T>(value: @autoclosure @escaping () throws -> T, _ err: ContextE
 	do {
 		return try value()
 	} catch let errd {
-		err.err_ptr.pointee = ContextError(
-			err.message,
-			cause: errd,
-			__file: err.file,
-			__function: err.function,
-			__line: err.line
-		)
+		if shouldStoreCallerInfo() {
+			err.err_ptr.pointee = CallerError(
+				message: err.message,
+				cause: errd,
+				__file: err.file,
+				__function: err.function,
+				__line: err.line
+			)
+		} else {
+			err.err_ptr.pointee = CauseError(message: err.message, cause: errd)
+		}
 		return nil
 	}
 }
@@ -93,13 +97,17 @@ public func !>> <T>(
 	do {
 		return try await value()
 	} catch let errd {
-		err.err_ptr.pointee = ContextError(
-			err.message,
-			cause: errd,
-			__file: err.file,
-			__function: err.function,
-			__line: err.line
-		)
+		if shouldStoreCallerInfo() {
+			err.err_ptr.pointee = CallerError(
+				message: err.message,
+				cause: errd,
+				__file: err.file,
+				__function: err.function,
+				__line: err.line
+			)
+		} else {
+			err.err_ptr.pointee = CauseError(message: err.message, cause: errd)
+		}
 		return nil
 	}
 }

@@ -6,10 +6,10 @@ import Testing
 // Test synchronous success case
 @Test("Sync operator handles success case")
 func testSyncOperatorSuccess() {
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result = try { "success" }() !> err
 	#expect(result == "success")
-	#expect(err is Error.Empty)
+	#expect(err is Error.Nil)
 }
 
 // Test synchronous failure case
@@ -19,7 +19,7 @@ func testSyncOperatorFailure() throws {
 		let message: String
 	}
 
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result =
 		try {
 			throw TestError(message: "test error")
@@ -43,7 +43,7 @@ func testGenericFunctionVersion() throws {
 		case divisionByZero
 	}
 
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result = try divide(10, by: 0) !> err
 
 	#expect(result == nil)
@@ -53,10 +53,10 @@ func testGenericFunctionVersion() throws {
 // Test asynchronous success case
 @Test("Async operator handles success case")
 func testAsyncOperatorSuccess() async throws {
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result = try await { "success" }() !> err
 	#expect(result == "success")
-	#expect(err is Error.Empty)
+	#expect(err is Error.Nil)
 }
 
 // Test asynchronous failure case
@@ -66,7 +66,7 @@ func testAsyncOperatorFailure() async throws {
 		let message: String
 	}
 
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result =
 		await
 		(try await {
@@ -83,19 +83,19 @@ func testAsyncOperatorFailure() async throws {
 // Test with real-world URL session example
 @Test("URL session error handling")
 func testURLSessionExample() async throws {
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let result =
 		await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
 		!>> .ctx(&err, "test")
 
 	#expect(result == nil)
-	#expect(err is ContextError)
+	#expect(err is CallerError)
 	#expect(err.cause(as: URLError.self) != nil)
 }
 
 @Test("URL session error handling")
 func testURLSessionExample2() async throws {
-	var err: Error = .Empty()
+	var err: Error = .nil
 	guard
 		let result = await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
 			!>> .ctx(&err, "test")
@@ -104,9 +104,9 @@ func testURLSessionExample2() async throws {
 	}
 
 	#expect(result == nil)
-	#expect(err is ContextError)
-	#expect((err as? ContextError)?.message == "test")
-	#expect((err as? ContextError)?.cause is URLError)
+	#expect(err is CallerError)
+	#expect((err as? CallerError)?.message == "test")
+	#expect((err as? CallerError)?.cause is URLError)
 }
 
 @Test("URL session error handling")
@@ -114,7 +114,7 @@ func testURLSessionExample3() async throws {
 	func someResult() -> Result<Data, Error> {
 		.success(Data())
 	}
-	var err: Error = .Empty()
+	var err: Error = .nil
 	let res = someResult()
 	guard let result = res !> .ctx(&err, "test") else {
 
@@ -129,7 +129,7 @@ func testURLSessionExample3() async throws {
 	}
 
 	#expect(result != nil)
-	#expect(err is Error.Empty)
+	#expect(err is Error.Nil)
 }
 
 @Test("URL session error handling")
@@ -138,11 +138,11 @@ func testURLSessionExample4() async throws {
 		.success(Data())
 	}
 
-	var err: Error = .Empty()
+	var err: Error = .nil
 	guard let result = await someAsyncResult() !> err else {
 		return
 	}
 
 	#expect(result == Data())
-	#expect(err is Error.Empty)
+	#expect(err is Error.Nil)
 }

@@ -43,4 +43,19 @@ extension Swift.Error {
 	) -> ContextError {
 		ContextError(message, cause: self, __file: __file, __function: __function, __line: __line)
 	}
+
+	public var isNotEmtpy: Bool {
+		if self is Empty {
+			return false
+		}
+		return true
+	}
+
+	public var isEmpty: Bool {
+		if self is Empty {
+			return true
+		}
+		return false
+	}
+
 }

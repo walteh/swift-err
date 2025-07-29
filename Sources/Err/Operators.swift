@@ -141,13 +141,3 @@ extension Result where Failure == Error, Success: ~Copyable {
 		}
 	}
 }
-
-// @inline(__always)
-// prefix func ~ <T, D>(_ value: T) -> D? where T: Error, D: Error {
-// 	return value.caused(by: D.self)
-// }
-
-// @inline(__always)
-// prefix func ~ <T, D>(_ value: T) -> D? {
-// 	return value is D ? value as? D : nil
-// }

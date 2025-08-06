@@ -5,7 +5,7 @@
 
 Leverage `guard` to make Swift error handling similar to Go, but with extra safety. Introduces the `!>` and `!>>` operators.
 
->[!WARNING] Experimental
+> [!WARNING] Experimental
 > This is not heavily tested and should be used accordingly.
 > The primary purpose of this project was to try and see how far I could push the syntactic sugar of Swift to more closely mimic the error handling of Go.
 

@@ -1,3 +1,7 @@
+> [!CAUTION]
+> This project is experimental and not sufficiently tested.
+
+
 # swift-err
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
@@ -5,8 +9,8 @@
 
 Leverage `guard` to make Swift error handling similar to Go, but with extra safety. Introduces the `!>` and `!>>` operators.
 
-> [!WARNING] Experimental
-> This is not heavily tested and should be used accordingly.
+
+> [!NOTE]
 > The primary purpose of this project was to try and see how far I could push the syntactic sugar of Swift to more closely mimic the error handling of Go.
 
 ## Quick Start

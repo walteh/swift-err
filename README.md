@@ -49,7 +49,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/walteh/swift-err.git", branch: "v3")
+    .package(url: "https://github.com/walteh/swift-err.git", branch: "main")
 ]
 ```
 

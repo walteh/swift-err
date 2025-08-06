@@ -86,7 +86,7 @@ func testURLSessionExample() async throws {
 	var err: Error = .nil
 	let result =
 		await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
-		!>> .ctx(&err, "test")
+		!>> .wrap(&err, "test")
 
 	#expect(result == nil)
 	#expect(err is CallerError)
@@ -98,7 +98,7 @@ func testURLSessionExample2() async throws {
 	var err: Error = .nil
 	guard
 		let result = await (try await URLSession.shared.data(from: URL(string: "https://///status/404")!))
-			!>> .ctx(&err, "test")
+			!>> .wrap(&err, "test")
 	else {
 		return
 	}
@@ -116,7 +116,7 @@ func testURLSessionExample3() async throws {
 	}
 	var err: Error = .nil
 	let res = someResult()
-	guard let result = res !> .ctx(&err, "test") else {
+	guard let result = res !> .wrap(&err, "test") else {
 
 		if let err = err.cause(as: URLError.self) {
 			print(err)

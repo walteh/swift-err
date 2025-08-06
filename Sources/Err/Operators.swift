@@ -58,7 +58,7 @@ public struct ContextErrorPointer {
 		self.function = function
 	}
 
-	public static func ctx(
+	public static func wrap(
 		_ err_ptr: inout Error,
 		_ message: String,
 		_ file: String = #file,
